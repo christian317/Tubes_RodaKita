@@ -10,13 +10,15 @@ class Pembayaran extends Model
 
     protected $fillable = [
         'id_booking',
-        'total_pemabayaran',
+        'total_pembayaran',
         'status_pembayaran',
         'komisi_pemilik',
     ];
 
+    public $timestamps = false;
+
     public function booking()
     {
-        return $this->belongsTo(Booking::class, 'booking_id');
+        return $this->belongsTo(Booking::class, 'id_booking');
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\PelangganController;
 use App\Http\Controllers\MitraMobilController;
 use App\Http\Controllers\MobilController;
+use App\Http\Controllers\AdminJadwalBookingController;
 
 Route::get('/', function () {
     return view('auth.login');
@@ -47,6 +48,12 @@ Route::middleware(['auth', 'role:1'])->group(function () {
     Route::get('/admin/user/{id}/edit', [AdminController::class, 'edit_user'])->name('admin.user.edit');
     Route::put('/admin/user/{id}', [AdminController::class, 'update_user'])->name('admin.user.update');
     Route::delete('/admin/user/{id}', [AdminController::class, 'destroy_user'])->name('admin.user.destroy');
+    // jadwal booking
+    // Rute untuk Admin Manajemen Booking & Jadwal
+    Route::get('/admin/booking', [AdminJadwalBookingController::class, 'index'])->name('admin.booking.index');
+    Route::post('/admin/booking/{id}/approve', [AdminJadwalBookingController::class, 'approve'])->name('admin.booking.approve');
+    Route::post('/admin/booking/{id}/reject', [AdminJadwalBookingController::class, 'reject'])->name('admin.booking.reject');
+    Route::post('/admin/booking/{id}/status', [AdminJadwalBookingController::class, 'updateStatus'])->name('admin.booking.updateStatus');
 });
 
 

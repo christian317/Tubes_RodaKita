@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Booking extends Model
 {
-    protected $table = 'bookings';
+    protected $table = 'booking';
 
     protected $fillable = [
         'id_user',
@@ -16,9 +16,13 @@ class Booking extends Model
         'waktu_mulai',
         'waktu_selesai',
         'status',
+        'tipe_layanan',
+        'foto_ktp'
     ];
 
-    public function pelanggan()
+    public $timestamps = false;
+
+    public function user()
     {
         return $this->belongsTo(User::class, 'id_user');
     }
@@ -27,4 +31,10 @@ class Booking extends Model
     {
         return $this->belongsTo(Mobil::class, 'id_mobil');
     }
+
+    public function pembayaran()
+    {
+        return $this->hasOne(Pembayaran::class, 'id_booking', 'id');
+    }
+
 }

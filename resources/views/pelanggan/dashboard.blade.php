@@ -95,7 +95,7 @@
                                 <div class="fw-bold text-success fs-5 lh-1">Rp {{ number_format($m->harga_sewa, 0, ',', '.') }}<span class="text-muted fs-6 fw-normal">/hr</span></div>
                             </div>
                             {{-- Ubah <a> menjadi <span> agar tidak konflik HTML bersarang, efek klik dihandle oleh stretched-link di atas --}}
-                            <span class="btn btn-primary bg-opacity-10 text-primary border-0 fw-bold rounded-3 px-3 py-2">
+                            <span class="btn btn-primary bg-opacity-10 border-0 fw-bold rounded-3 px-3 py-2">
                                 Detail
                             </span>
                         </div>

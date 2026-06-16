@@ -7,6 +7,9 @@
     
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    {{-- PERBAIKAN: Tambahkan stack styles agar CSS spesifik dari halaman bisa dimuat --}}
+    @stack('styles')
 </head>
 <body class="bg-light text-dark" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
 
@@ -35,7 +38,7 @@
                 <p class="text-muted fw-bold small text-uppercase mb-2 px-2 mt-4" style="letter-spacing: 0.5px;">Operasional</p>
                 <ul class="nav flex-column mb-3">
                     <li class="nav-item"><a href="{{ route('admin.mobil.index') }}" class="nav-link text-dark fw-medium rounded d-flex align-items-center px-3 py-2 mb-1"><i class="bi bi-car-front text-muted me-3 fs-5"></i> Manajemen Mobil</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link text-dark fw-medium rounded d-flex align-items-center px-3 py-2 mb-1"><i class="bi bi-calendar3 text-muted me-3 fs-5"></i> Jadwal & Booking</a></li>
+                    <li class="nav-item"><a href="{{ route('admin.booking.index') }}" class="nav-link text-dark fw-medium rounded d-flex align-items-center px-3 py-2 mb-1"><i class="bi bi-calendar3 text-muted me-3 fs-5"></i> Jadwal & Booking</a></li>
                     <li class="nav-item"><a href="#" class="nav-link text-dark fw-medium rounded d-flex align-items-center px-3 py-2 mb-1"><i class="bi bi-clipboard-check text-muted me-3 fs-5"></i> Kondisi Mobil</a></li>
                     <li class="nav-item"><a href="#" class="nav-link text-dark fw-medium rounded d-flex align-items-center px-3 py-2 mb-1"><i class="bi bi-star text-muted me-3 fs-5"></i> Rating Pelanggan</a></li>
                 </ul>
@@ -85,6 +88,9 @@
         </main>
     </div>
 </div>
+
+{{-- PERBAIKAN: Tambahkan stack scripts agar Javascript dari halaman bisa dieksekusi --}}
+@stack('scripts')
 
 </body>
 </html>
