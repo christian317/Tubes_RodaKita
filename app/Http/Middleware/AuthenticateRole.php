@@ -10,13 +10,13 @@ class AuthenticateRole
 {
     public function handle(Request $request, Closure $next, ...$roles)
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect('/login');
         }
 
         $userRole = Auth::user()->id_role;
 
-        if (!in_array($userRole, $roles)) {
+        if (! in_array($userRole, $roles)) {
             abort(403, 'AKSES DITOLAK!');
         }
 

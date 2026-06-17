@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AuthenticateRole;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,12 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         // 1. Daftarkan Alias Middleware Anda
         $middleware->alias([
-            'role' => \App\Http\Middleware\AuthenticateRole::class,
+            'role' => AuthenticateRole::class,
         ]);
 
         // 2. TAMBAHAN PENTING: Matikan CSRF untuk rute notifikasi Midtrans
         $middleware->validateCsrfTokens(except: [
-            '/midtrans/callback'
+            '/midtrans/callback',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
