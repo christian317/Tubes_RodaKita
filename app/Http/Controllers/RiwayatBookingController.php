@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Booking;
 use App\Models\Ulasan;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class RiwayatBookingController extends Controller
@@ -37,7 +37,7 @@ class RiwayatBookingController extends Controller
         // 1. Validasi inputan form
         $request->validate([
             'rating' => 'required|integer|min:1|max:5',
-            'catatan' => 'required|string|max:500'
+            'catatan' => 'required|string|max:500',
         ]);
 
         // 2. Pastikan pesanan benar-benar milik user yang sedang login
@@ -58,7 +58,7 @@ class RiwayatBookingController extends Controller
             'id_booking' => $booking->id,
             'tipe' => 'mobil',
             'rating' => $request->rating,
-            'catatan' => $request->catatan
+            'catatan' => $request->catatan,
         ]);
 
         return back()->with('success', 'Terima kasih! Ulasan dan rating Anda untuk mobil ini berhasil disimpan.');

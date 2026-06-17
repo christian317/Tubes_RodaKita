@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
-use App\Models\Mobil;
 use App\Models\KondisiMobil;
+use App\Models\Mobil;
+use App\Models\Ulasan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -22,15 +23,15 @@ class AdminJadwalBookingController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('id', 'like', '%' . $search . '%')
-                  ->orWhereHas('user', function($u) use ($search) {
-                      $u->where('nama', 'like', '%' . $search . '%');
-                  })
-                  ->orWhereHas('mobil', function($m) use ($search) {
-                      $m->where('model', 'like', '%' . $search . '%')
-                        ->orWhere('plat_nomer', 'like', '%' . $search . '%');
-                  });
+            $query->where(function ($q) use ($search) {
+                $q->where('id', 'like', '%'.$search.'%')
+                    ->orWhereHas('user', function ($u) use ($search) {
+                        $u->where('nama', 'like', '%'.$search.'%');
+                    })
+                    ->orWhereHas('mobil', function ($m) use ($search) {
+                        $m->where('model', 'like', '%'.$search.'%')
+                            ->orWhere('plat_nomer', 'like', '%'.$search.'%');
+                    });
             });
         }
 
@@ -42,9 +43,15 @@ class AdminJadwalBookingController extends Controller
             }
         }
 
-        if ($request->filled('tanggal')) { $query->whereDate('tanggal_mulai', $request->tanggal); }
-        if ($request->filled('bulan')) { $query->whereMonth('tanggal_mulai', $request->bulan); }
-        if ($request->filled('tahun')) { $query->whereYear('tanggal_mulai', $request->tahun); }
+        if ($request->filled('tanggal')) {
+            $query->whereDate('tanggal_mulai', $request->tanggal);
+        }
+        if ($request->filled('bulan')) {
+            $query->whereMonth('tanggal_mulai', $request->bulan);
+        }
+        if ($request->filled('tahun')) {
+            $query->whereYear('tanggal_mulai', $request->tahun);
+        }
 
         $bookings = $query->paginate(10)->appends($request->query());
 
@@ -60,6 +67,7 @@ class AdminJadwalBookingController extends Controller
             return back()->with('error', 'Status pesanan tidak valid untuk disetujui.');
         }
         $booking->update(['status' => 'menunggu']);
+
         return back()->with('success', 'Pengajuan sewa disetujui.');
     }
 
@@ -70,13 +78,19 @@ class AdminJadwalBookingController extends Controller
         try {
             $booking->update(['status' => 'batal']);
             $mobil = Mobil::find($booking->id_mobil);
-            if ($mobil) { $mobil->update(['status_mobil' => 'sewa']); }
-            if ($booking->pembayaran) { $booking->pembayaran->update(['status_pembayaran' => 'dibatalkan']); }
+            if ($mobil) {
+                $mobil->update(['status_mobil' => 'sewa']);
+            }
+            if ($booking->pembayaran) {
+                $booking->pembayaran->update(['status_pembayaran' => 'dibatalkan']);
+            }
             DB::commit();
+
             return back()->with('success', 'Pengajuan sewa ditolak.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal membatalkan: ' . $e->getMessage());
+
+            return back()->with('error', 'Gagal membatalkan: '.$e->getMessage());
         }
     }
 
@@ -118,12 +132,17 @@ class AdminJadwalBookingController extends Controller
             ]);
 
             $booking->update(['status' => 'disewakan']);
+            if ($booking->mobil) {
+                $booking->mobil->update(['status_mobil' => 'booked']);
+            }
 
             DB::commit();
+
             return back()->with('with_tab_status', 'disewakan')->with('success', 'Kondisi awal berhasil dicatat. Mobil resmi diserahkan.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal memproses penyerahan: ' . $e->getMessage());
+
+            return back()->with('error', 'Gagal memproses penyerahan: '.$e->getMessage());
         }
     }
 
@@ -140,7 +159,7 @@ class AdminJadwalBookingController extends Controller
             'foto.*' => 'image|mimes:jpeg,png,jpg|max:2048',
             // VALIDASI ULASAN PELANGGAN OLEH ADMIN
             'rating_pelanggan' => 'required|integer|min:1|max:5',
-            'catatan_pelanggan' => 'nullable|string'
+            'catatan_pelanggan' => 'nullable|string',
         ]);
 
         $booking = Booking::findOrFail($id);
@@ -168,22 +187,26 @@ class AdminJadwalBookingController extends Controller
             ]);
 
             // SIMPAN ULASAN PELANGGAN
-            \App\Models\Ulasan::create([
+            Ulasan::create([
                 'id_booking' => $booking->id,
                 'tipe' => 'pelanggan',
                 'rating' => $request->rating_pelanggan,
-                'catatan' => $request->catatan_pelanggan
+                'catatan' => $request->catatan_pelanggan,
             ]);
 
             $booking->update(['status' => 'selesai']);
             $mobil = Mobil::find($booking->id_mobil);
-            if ($mobil) { $mobil->update(['status_mobil' => 'sewa']); }
+            if ($mobil) {
+                $mobil->update(['status_mobil' => 'sewa']);
+            }
 
             DB::commit();
+
             return back()->with('with_tab_status', 'selesai')->with('success', 'Kondisi akhir & ulasan berhasil dicatat. Rental Selesai.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal memproses: ' . $e->getMessage());
+
+            return back()->with('error', 'Gagal memproses: '.$e->getMessage());
         }
     }
 }

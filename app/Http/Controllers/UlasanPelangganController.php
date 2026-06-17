@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Ulasan;
 use App\Models\Mobil;
+use App\Models\Ulasan;
 use Illuminate\Support\Facades\Auth;
 
 class UlasanPelangganController extends Controller

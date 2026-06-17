@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\User;
 use App\Models\PemilikMobil;
-use Illuminate\Support\Facades\Hash;
+use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
 {
@@ -70,19 +70,21 @@ class AdminController extends Controller
 
             DB::commit();
             $tipe = $request->id_role == 3 ? 'Mitra' : 'Pelanggan';
+
             return redirect()->route('admin.user.index')->with('success', "Akun $tipe baru berhasil ditambahkan.");
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
+
+            return redirect()->back()->withErrors(['error' => 'Terjadi kesalahan: '.$e->getMessage()])->withInput();
         }
     }
 
     public function edit_user($id)
     {
         $user = User::with('pemilikMobil')->findOrFail($id);
+
         return view('admin.user.edit', compact('user'));
     }
-
 
     public function update_user(Request $request, $id)
     {
@@ -90,7 +92,7 @@ class AdminController extends Controller
 
         $rules = [
             'nama' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:user,email,' . $user->id,
+            'email' => 'required|string|email|max:255|unique:user,email,'.$user->id,
             'password' => 'nullable|string|min:6',
             'alamat' => 'required|string|max:500',
             'no_telepon' => 'required|string|max:15',
@@ -99,7 +101,7 @@ class AdminController extends Controller
         if ($user->id_role == 3) {
             $rules['nama_bank'] = 'required|string|max:50';
             $rules['nomor_rekening'] = 'required|string|max:50';
-            $rules['nomor_ktp'] = 'required|string|max:50|unique:pemilik_mobil,nomor_ktp,' . $user->id . ',id_user';
+            $rules['nomor_ktp'] = 'required|string|max:50|unique:pemilik_mobil,nomor_ktp,'.$user->id.',id_user';
         }
 
         $request->validate($rules);
@@ -130,10 +132,12 @@ class AdminController extends Controller
 
             DB::commit();
             $tipe = $user->id_role == 3 ? 'Mitra' : 'Pelanggan';
+
             return redirect()->route('admin.user.index')->with('success', "Data $tipe berhasil diperbarui.");
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withErrors(['error' => 'Gagal memperbarui data: ' . $e->getMessage()])->withInput();
+
+            return redirect()->back()->withErrors(['error' => 'Gagal memperbarui data: '.$e->getMessage()])->withInput();
         }
     }
 
@@ -151,10 +155,12 @@ class AdminController extends Controller
             $user->delete();
 
             DB::commit();
+
             return redirect()->back()->with('success', 'Pengguna berhasil dihapus.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withErrors(['error' => 'Gagal menghapus: ' . $e->getMessage()]);
+
+            return redirect()->back()->withErrors(['error' => 'Gagal menghapus: '.$e->getMessage()]);
         }
     }
 }

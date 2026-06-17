@@ -17,7 +17,7 @@ class Booking extends Model
         'waktu_selesai',
         'status',
         'tipe_layanan',
-        'foto_ktp'
+        'foto_ktp',
     ];
 
     public $timestamps = false;

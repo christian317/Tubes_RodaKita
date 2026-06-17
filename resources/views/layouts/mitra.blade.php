@@ -68,6 +68,14 @@
                         {{-- MENU ULASAN PELANGGAN --}}
                         <li class="nav-item">
                             <a href="{{ route('mitra.ulasanPelanggan.index') }}"
+                        <li class="nav-item">
+                            <a href="{{ route('mitra.klaim.index') }}"
+                                class="nav-link rounded d-flex align-items-center px-3 py-2 mb-1 {{ request()->routeIs('mitra.klaim.*') ? 'bg-primary bg-opacity-10 text-primary fw-bold shadow-sm' : 'text-dark fw-medium' }}">
+                                <i
+                                    class="bi bi-shield-exclamation me-3 fs-5 {{ request()->routeIs('mitra.klaim.*') ? '' : 'text-muted' }}"></i>
+                                Klaim Asuransi
+                            </a>
+                        </li>
                                 class="nav-link rounded d-flex align-items-center px-3 py-2 mb-1 {{ request()->routeIs('mitra.ulasanPelanggan.*') ? 'bg-primary bg-opacity-10 text-primary fw-bold shadow-sm' : 'text-dark fw-medium' }}">
                                 <i
                                     class="bi bi-star-half me-3 fs-5 {{ request()->routeIs('mitra.ulasanPelanggan.*') ? '' : 'text-muted' }}"></i>

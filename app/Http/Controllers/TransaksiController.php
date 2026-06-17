@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Pembayaran;
 use App\Models\PemilikMobil;
 use App\Models\PencairanKomisi;
+use Illuminate\Http\Request;
 
 class TransaksiController extends Controller
 {
@@ -22,7 +22,7 @@ class TransaksiController extends Controller
 
         foreach ($mitras as $mitra) {
             // Pendapatan Mitra (70% dari pesanan mobil miliknya)
-            $pendapatan = Pembayaran::whereHas('booking.mobil', function($q) use($mitra) {
+            $pendapatan = Pembayaran::whereHas('booking.mobil', function ($q) use ($mitra) {
                 $q->where('id_pemilik_mobil', $mitra->id_user);
             })->whereIn('status_pembayaran', ['dibayar', 'lunas', 'selesai'])->sum('komisi_pemilik');
 
@@ -32,7 +32,7 @@ class TransaksiController extends Controller
             // Saldo saat ini
             $mitra->saldo_berjalan = $pendapatan - $dicairkan;
             $mitra->total_pendapatan = $pendapatan;
-            
+
             $totalHutangMitra += $mitra->saldo_berjalan;
         }
 
@@ -48,7 +48,7 @@ class TransaksiController extends Controller
             'id_pemilik_mobil' => 'required|exists:pemilik_mobil,id_user',
             'jumlah_transfer' => 'required|numeric|min:10000',
             'bukti_transfer' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'catatan' => 'nullable|string'
+            'catatan' => 'nullable|string',
         ]);
 
         try {
@@ -63,7 +63,7 @@ class TransaksiController extends Controller
 
             return back()->with('success', 'Dana komisi berhasil ditransfer ke mitra dan saldo telah dipotong.');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal memproses pencairan: ' . $e->getMessage());
+            return back()->with('error', 'Gagal memproses pencairan: '.$e->getMessage());
         }
     }
 }

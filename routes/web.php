@@ -1,19 +1,21 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\PelangganController;
+use App\Http\Controllers\AdminJadwalBookingController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\JadwalLiburanController;
+use App\Http\Controllers\KlaimAsuransiController;
+use App\Http\Controllers\KondisiUlasanController;
 use App\Http\Controllers\MitraMobilController;
 use App\Http\Controllers\MobilController;
-use App\Http\Controllers\AdminJadwalBookingController;
-use App\Http\Controllers\RiwayatBookingController;
-use App\Http\Controllers\JadwalLiburanController;
-use App\Http\Controllers\KondisiUlasanController;
-use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\MonitoringMobilController;
+use App\Http\Controllers\PelangganController;
 use App\Http\Controllers\PendapatanKomisiController;
+use App\Http\Controllers\RiwayatBookingController;
+use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\UlasanPelangganController;
+use App\Http\Controllers\VerifikasiController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
@@ -36,13 +38,13 @@ Route::middleware(['auth', 'role:1'])->group(function () {
     Route::get('/admin/mobil/{id}/edit', [MobilController::class, 'edit_mobil'])->name('admin.mobil.edit');
     Route::put('/admin/mobil/update/{id}', [MobilController::class, 'update_mobil'])->name('admin.mobil.update');
     Route::delete('/admin/mobil/destroy/{id}', [MobilController::class, 'destroy_mobil'])->name('admin.mobil.destroy');
-    // brand 
+    // brand
     Route::get('/admin/mobil/brand/create', [MobilController::class, 'createBrand'])->name('admin.mobil.brand.create');
     Route::post('/admin/mobil/brand', [MobilController::class, 'storeBrand'])->name('admin.mobil.brand.store');
     Route::get('/admin/mobil/brand/{id}/edit', [MobilController::class, 'editBrand'])->name('admin.mobil.brand.edit');
     Route::put('/admin/mobil/brand/{id}', [MobilController::class, 'updateBrand'])->name('admin.mobil.brand.update');
     Route::delete('/admin/mobil/brand/{id}', [MobilController::class, 'destroyBrand'])->name('admin.mobil.brand.destroy');
-    //kategori
+    // kategori
     Route::get('/admin/mobil/kategori/create', [MobilController::class, 'createKategori'])->name('admin.mobil.kategori.create');
     Route::post('/admin/mobil/kategori', [MobilController::class, 'storeKategori'])->name('admin.mobil.kategori.store');
     Route::get('/admin/mobil/kategori/{id}/edit', [MobilController::class, 'editKategori'])->name('admin.mobil.kategori.edit');
@@ -68,8 +70,6 @@ Route::middleware(['auth', 'role:1'])->group(function () {
     Route::post('/admin/keuangan/transfer', [TransaksiController::class, 'transferDana'])->name('admin.transaksi.transfer');
 });
 
-
-
 // user
 Route::middleware(['auth', 'role:2'])->group(function () {
     Route::get('pelanggan/dashboard', [PelangganController::class, 'dashboard'])->name('pelanggan.dashboard');
@@ -87,7 +87,6 @@ Route::middleware(['auth', 'role:2'])->group(function () {
     Route::delete('/pelanggan/jadwal-liburan/hapus/{id}', [JadwalLiburanController::class, 'destroy'])->name('pelanggan.jadwal.destroy');
 });
 
-
 // mitra penyewa mobil
 Route::middleware(['auth', 'role:3'])->group(function () {
     Route::get('mitra/dashboard', [MitraMobilController::class, 'dashboard'])->name('mitra.dashboard');
@@ -99,4 +98,32 @@ Route::middleware(['auth', 'role:3'])->group(function () {
 });
 
 // Rute publik khusus menerima respon notifikasi pembayaran Midtrans Snap
+
+// Verifikasi Akun Pelanggan
+Route::middleware(['auth', 'role:2'])->group(function () {
+    Route::get('/pelanggan/verifikasi', [VerifikasiController::class, 'index'])->name('pelanggan.verifikasi.index');
+    Route::post('/pelanggan/verifikasi/upload', [VerifikasiController::class, 'upload'])->name('pelanggan.verifikasi.upload');
+    Route::post('/pelanggan/verifikasi/proses', [VerifikasiController::class, 'prosesVerifikasi'])->name('pelanggan.verifikasi.proses');
+});
+
+// Admin Verifikasi
+Route::middleware(['auth', 'role:1'])->group(function () {
+    Route::get('/admin/verifikasi', [VerifikasiController::class, 'adminIndex'])->name('admin.verifikasi.index');
+    Route::post('/admin/verifikasi/{id}/approve', [VerifikasiController::class, 'approve'])->name('admin.verifikasi.approve');
+    Route::post('/admin/verifikasi/{id}/reject', [VerifikasiController::class, 'reject'])->name('admin.verifikasi.reject');
+});
+
+// Mitra Klaim Asuransi
+Route::middleware(['auth', 'role:3'])->group(function () {
+    Route::get('/mitra/klaim', [KlaimAsuransiController::class, 'index'])->name('mitra.klaim.index');
+    Route::post('/mitra/klaim/store', [KlaimAsuransiController::class, 'store'])->name('mitra.klaim.store');
+    Route::get('/mitra/klaim/{id}', [KlaimAsuransiController::class, 'detail'])->name('mitra.klaim.detail');
+});
+
+// Admin Klaim Asuransi
+Route::middleware(['auth', 'role:1'])->group(function () {
+    Route::get('/admin/klaim', [KlaimAsuransiController::class, 'adminIndex'])->name('admin.klaim.index');
+    Route::post('/admin/klaim/{id}/proses', [KlaimAsuransiController::class, 'proses'])->name('admin.klaim.proses');
+});
+
 Route::post('/midtrans/callback', [PelangganController::class, 'handleNotification']);

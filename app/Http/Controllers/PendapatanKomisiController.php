@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Booking;
 use App\Models\Mobil;
+use App\Models\Pembayaran;
 use App\Models\PencairanKomisi;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Pembayaran;
-use App\Models\Booking;
 
 class PendapatanKomisiController extends Controller
 {
@@ -15,15 +15,15 @@ class PendapatanKomisiController extends Controller
         $id_mitra = Auth::id();
 
         // 1. Ambil daftar mobil milik mitra beserta riwayat booking yang pembayarannya LUNAS
-        $mobils = Mobil::with(['brand', 'kategori', 'bookings' => function($q) {
-            $q->whereHas('pembayaran', function($query) {
+        $mobils = Mobil::with(['brand', 'kategori', 'bookings' => function ($q) {
+            $q->whereHas('pembayaran', function ($query) {
                 $query->whereIn('status_pembayaran', ['dibayar', 'lunas', 'selesai']);
-            })->with(['pembayaran' => function($query) {
+            })->with(['pembayaran' => function ($query) {
                 $query->whereIn('status_pembayaran', ['dibayar', 'lunas', 'selesai']);
             }])->orderBy('tanggal_mulai', 'desc');
         }])
-        ->where('id_pemilik_mobil', $id_mitra)
-        ->get();
+            ->where('id_pemilik_mobil', $id_mitra)
+            ->get();
 
         // 2. Kalkulasi Pendapatan Global & Per Mobil
         $totalPendapatanGlobal = 0; // Disesuaikan dengan view
@@ -34,7 +34,7 @@ class PendapatanKomisiController extends Controller
                     $pendapatanMobil += $booking->pembayaran->komisi_pemilik;
                 }
             }
-            $mobil->total_pendapatan = $pendapatanMobil; 
+            $mobil->total_pendapatan = $pendapatanMobil;
             $totalPendapatanGlobal += $pendapatanMobil; // Disesuaikan dengan view
         }
 
@@ -63,7 +63,7 @@ class PendapatanKomisiController extends Controller
 
         // Ambil seluruh transaksi pesanan lunas khusus untuk mobil ini
         $bookings = Booking::where('id_mobil', $mobil->id)
-            ->whereHas('pembayaran', function($query) {
+            ->whereHas('pembayaran', function ($query) {
                 $query->whereIn('status_pembayaran', ['dibayar', 'lunas', 'selesai']);
             })
             ->with('pembayaran')
@@ -71,7 +71,7 @@ class PendapatanKomisiController extends Controller
             ->get();
 
         // Hitung total pendapatan khusus mobil ini
-        $totalKomisiMobil = $bookings->sum(function($b) {
+        $totalKomisiMobil = $bookings->sum(function ($b) {
             return $b->pembayaran->komisi_pemilik;
         });
 
@@ -79,11 +79,11 @@ class PendapatanKomisiController extends Controller
         $allMobils = Mobil::where('id_pemilik_mobil', $id_mitra)->get();
         $totalPendapatanGlobal = 0;
         foreach ($allMobils as $m) {
-            $totalPendapatanGlobal += Pembayaran::whereHas('booking', function($q) use($m) {
+            $totalPendapatanGlobal += Pembayaran::whereHas('booking', function ($q) use ($m) {
                 $q->where('id_mobil', $m->id);
             })->whereIn('status_pembayaran', ['dibayar', 'lunas', 'selesai'])->sum('komisi_pemilik');
         }
-        
+
         $totalDicairkanGlobal = PencairanKomisi::where('id_pemilik_mobil', $id_mitra)->sum('jumlah');
         $tunggakanAdminGlobal = $totalPendapatanGlobal - $totalDicairkanGlobal;
 

@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Booking;
 use App\Models\JadwalLiburan;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class JadwalLiburanController extends Controller
@@ -33,10 +34,10 @@ class JadwalLiburanController extends Controller
 
         // Urutkan berdasarkan tanggal, lalu berdasarkan JAM MULAI
         $jadwals = JadwalLiburan::where('id_booking', $id_booking)
-                    ->orderBy('tanggal', 'asc')
-                    ->orderBy('jam_mulai', 'asc')
-                    ->get()
-                    ->groupBy('tanggal');
+            ->orderBy('tanggal', 'asc')
+            ->orderBy('jam_mulai', 'asc')
+            ->get()
+            ->groupBy('tanggal');
 
         return view('pelanggan.jadwalLiburan.detail', compact('booking', 'jadwals'));
     }
@@ -47,13 +48,13 @@ class JadwalLiburanController extends Controller
         $booking = Booking::findOrFail($id_booking);
 
         $request->validate([
-            'tanggal' => 'required|date|after_or_equal:' . \Carbon\Carbon::parse($booking->tanggal_mulai)->format('Y-m-d') . '|before_or_equal:' . \Carbon\Carbon::parse($booking->tanggal_selesai)->format('Y-m-d'),
+            'tanggal' => 'required|date|after_or_equal:'.Carbon::parse($booking->tanggal_mulai)->format('Y-m-d').'|before_or_equal:'.Carbon::parse($booking->tanggal_selesai)->format('Y-m-d'),
             'jam_mulai' => 'required',
             'jam_selesai' => 'required|after:jam_mulai',
             'kegiatan' => 'required|string|max:255',
-            'lokasi' => 'nullable|string|max:255'
+            'lokasi' => 'nullable|string|max:255',
         ], [
-            'jam_selesai.after' => 'Jam selesai harus lebih dari jam mulai.'
+            'jam_selesai.after' => 'Jam selesai harus lebih dari jam mulai.',
         ]);
 
         JadwalLiburan::create([
@@ -62,7 +63,7 @@ class JadwalLiburanController extends Controller
             'jam_mulai' => $request->jam_mulai,
             'jam_selesai' => $request->jam_selesai,
             'kegiatan' => $request->kegiatan,
-            'lokasi' => $request->lokasi
+            'lokasi' => $request->lokasi,
         ]);
 
         return back()->with('success', 'Kegiatan berhasil ditambahkan ke jadwal Anda!');
@@ -72,11 +73,12 @@ class JadwalLiburanController extends Controller
     public function destroy($id)
     {
         $jadwal = JadwalLiburan::findOrFail($id);
-        
+
         // Pastikan hanya pemilik pesanan yang bisa menghapus
         $booking = Booking::where('id_user', Auth::id())->findOrFail($jadwal->id_booking);
-        
+
         $jadwal->delete();
+
         return back()->with('success', 'Kegiatan berhasil dihapus.');
     }
 }

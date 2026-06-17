@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Mobil;
 use App\Models\Brand;
 use App\Models\Kategori;
+use App\Models\Mobil;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class MobilController extends Controller
@@ -14,9 +14,9 @@ class MobilController extends Controller
     public function createBrand()
     {
         $brands = Brand::all();
+
         return view('admin.mobil.brand.create', compact('brands'));
     }
-
 
     public function storeBrand(Request $request)
     {
@@ -36,6 +36,7 @@ class MobilController extends Controller
     public function editBrand($id)
     {
         $brand = Brand::findOrFail($id);
+
         return view('admin.mobil.brand.edit', compact('brand'));
     }
 
@@ -64,13 +65,12 @@ class MobilController extends Controller
         return redirect()->back()->with('success', 'Kategori berhasil dihapus.');
     }
 
-
     public function createKategori()
     {
         $kategoris = Kategori::all();
+
         return view('admin.mobil.kategori.create', compact('kategoris'));
     }
-
 
     public function storeKategori(Request $request)
     {
@@ -90,6 +90,7 @@ class MobilController extends Controller
     public function editKategori($id)
     {
         $kategori = Kategori::findOrFail($id);
+
         return view('admin.mobil.kategori.edit', compact('kategori'))->with('success', 'Kategori berhasil diperbarui.');
     }
 
@@ -119,7 +120,6 @@ class MobilController extends Controller
         return redirect()->back()->with('success', 'Kategori berhasil dihapus.');
     }
 
-
     public function index_mobil()
     {
         // Ambil data beserta relasinya
@@ -134,7 +134,6 @@ class MobilController extends Controller
         return view('admin.mobil.index', compact('mobils', 'brands', 'kategoris', 'pemiliks'));
     }
 
-
     public function createMobil()
     {
         $brands = Brand::all();
@@ -143,7 +142,6 @@ class MobilController extends Controller
 
         return view('admin.mobil.create', compact('brands', 'kategoris', 'pemiliks'));
     }
-
 
     public function store_mobil(Request $request)
     {
@@ -239,7 +237,6 @@ class MobilController extends Controller
 
         return redirect()->route('admin.mobil.index')->with('success', 'Data mobil berhasil diperbarui.');
     }
-
 
     public function destroy_mobil($id)
     {

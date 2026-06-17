@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Booking;
+use Illuminate\Http\Request;
 
 class KondisiUlasanController extends Controller
 {
@@ -12,22 +12,22 @@ class KondisiUlasanController extends Controller
     {
         // PERBAIKAN: Ganti orderBy('updated_at', 'desc') menjadi orderBy('id', 'desc')
         $query = Booking::with([
-            'mobil.brand', 'user', 
-            'kondisiPengambilan', 'kondisiPengembalian', 
-            'ulasanPelanggan', 'ulasanMobil'
+            'mobil.brand', 'user',
+            'kondisiPengambilan', 'kondisiPengembalian',
+            'ulasanPelanggan', 'ulasanMobil',
         ])->where('status', 'selesai')->orderBy('id', 'desc');
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('id', 'like', '%' . $search . '%')
-                  ->orWhereHas('user', function($u) use ($search) {
-                      $u->where('nama', 'like', '%' . $search . '%');
-                  })
-                  ->orWhereHas('mobil', function($m) use ($search) {
-                      $m->where('plat_nomer', 'like', '%' . $search . '%')
-                        ->orWhere('model', 'like', '%' . $search . '%');
-                  });
+            $query->where(function ($q) use ($search) {
+                $q->where('id', 'like', '%'.$search.'%')
+                    ->orWhereHas('user', function ($u) use ($search) {
+                        $u->where('nama', 'like', '%'.$search.'%');
+                    })
+                    ->orWhereHas('mobil', function ($m) use ($search) {
+                        $m->where('plat_nomer', 'like', '%'.$search.'%')
+                            ->orWhere('model', 'like', '%'.$search.'%');
+                    });
             });
         }
 

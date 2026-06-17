@@ -10,14 +10,16 @@ class PemilikMobil extends Model
 
     // Karena Primary Key-nya adalah id_user (bukan id auto increment standar)
     protected $primaryKey = 'id_user';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
         'id_user',
         'nama_bank',
         'nomor_rekening',
-        'nomor_ktp'
+        'nomor_ktp',
     ];
 
     public function user()
