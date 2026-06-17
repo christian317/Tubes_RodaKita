@@ -174,6 +174,18 @@
                                             identitas layanan Lepas Kunci. Maks 2MB.</small>
                                     </div>
                                 </div>
+
+                                {{-- KODE PROMO SYSTEM --}}
+                                <div class="mb-4">
+                                    <label class="form-label small fw-bold text-dark mb-2">Kode Promo / Voucher</label>
+                                    <div class="input-group">
+                                        <input type="text" name="kode_promo" id="inputKodePromo" class="form-control text-uppercase" placeholder="Masukkan kode promo (e.g. RODAKITA10)">
+                                        <button type="button" class="btn btn-dark fw-bold px-3" id="btnApplyPromo">Gunakan</button>
+                                    </div>
+                                    <div id="promoFeedback" class="small mt-2" style="display: none;"></div>
+                                    <input type="hidden" name="applied_id_promo" id="appliedIdPromo" value="">
+                                </div>
+
                                 {{-- KOTAK TOTAL --}}
                                 <div class="summary-box p-4 rounded-4 mb-4">
                                     <div class="d-flex justify-content-between mb-2 small text-dark">
@@ -185,6 +197,12 @@
                                         style="display: none !important;">
                                         <span>Biaya Supir (<span id="durasiSupirTeks">0</span>x Hari)</span>
                                         <span class="fw-bold" id="biayaSupirTeks">Rp 0</span>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between mb-2 small text-success" id="rincianDiskon"
+                                        style="display: none !important;">
+                                        <span>Potongan Promo (<span id="promoCodeLabel"></span>)</span>
+                                        <span class="fw-bold" id="potonganHargaTeks">- Rp 0</span>
                                     </div>
 
                                     <div class="d-flex justify-content-between border-top pt-3 mt-2">
@@ -244,6 +262,42 @@
     </div>
 
     <script>
+        let appliedPromo = null;
+        let potonganHarga = 0;
+
+        function hitungTotalSebelumPromo() {
+            const tglMulai = document.getElementById('hiddenTglMulai').value;
+            const tglSelesai = document.getElementById('hiddenTglSelesai').value;
+            const jamMulai = document.getElementById('jamMulai').value;
+            const jamSelesai = document.getElementById('jamSelesai').value;
+
+            const pakaiSupir = document.getElementById('denganSupir').checked;
+
+            if (tglMulai && jamMulai && tglSelesai && jamSelesai) {
+                const startString = tglMulai + "T" + jamMulai + ":00";
+                const endString = tglSelesai + "T" + jamSelesai + ":00";
+                const d1 = new Date(startString);
+                const d2 = new Date(endString);
+
+                if (d2 > d1) {
+                    const diffTime = Math.abs(d2 - d1);
+                    const diffHours = diffTime / (1000 * 60 * 60);
+
+                    let diffDays = Math.ceil(diffHours / 24);
+                    if (diffDays === 0) diffDays = 1;
+
+                    const hargaSewaMobil = parseInt(document.getElementById('hargaPerHari').dataset.harga);
+
+                    let totalBiayaSupir = 0;
+                    if (pakaiSupir) {
+                        totalBiayaSupir = 150000 * diffDays;
+                    }
+                    return (diffDays * hargaSewaMobil) + totalBiayaSupir;
+                }
+            }
+            return 0;
+        }
+
         function hitungTotal() {
             const tglMulai = document.getElementById('hiddenTglMulai').value;
             const tglSelesai = document.getElementById('hiddenTglSelesai').value;
@@ -303,7 +357,23 @@
                         rincianSupirDiv.style.setProperty('display', 'none', 'important');
                     }
 
-                    const totalKeseluruhan = (diffDays * hargaSewaMobil) + totalBiayaSupir;
+                    const subtotal = (diffDays * hargaSewaMobil) + totalBiayaSupir;
+                    const rincianDiskonDiv = document.getElementById('rincianDiskon');
+                    let totalKeseluruhan = subtotal;
+
+                    if (appliedPromo) {
+                        rincianDiskonDiv.style.setProperty('display', 'flex', 'important');
+                        document.getElementById('promoCodeLabel').innerText = appliedPromo.code;
+                        
+                        let currentPotongan = potonganHarga;
+                        if (currentPotongan > subtotal) {
+                            currentPotongan = subtotal;
+                        }
+                        document.getElementById('potonganHargaTeks').innerText = '- Rp ' + currentPotongan.toLocaleString('id-ID');
+                        totalKeseluruhan = subtotal - currentPotongan;
+                    } else {
+                        rincianDiskonDiv.style.setProperty('display', 'none', 'important');
+                    }
 
                     document.getElementById('durasiTeks').innerText = diffDays;
                     document.getElementById('totalHargaTeks').innerText = 'Rp ' + totalKeseluruhan.toLocaleString('id-ID');
@@ -315,8 +385,82 @@
             }
         }
 
+        function resetPromo() {
+            if (appliedPromo) {
+                appliedPromo = null;
+                potonganHarga = 0;
+                document.getElementById('appliedIdPromo').value = '';
+                document.getElementById('inputKodePromo').value = '';
+                const feedback = document.getElementById('promoFeedback');
+                feedback.style.display = 'block';
+                feedback.className = 'small mt-2 text-warning';
+                feedback.innerHTML = '<i class="bi bi-info-circle me-1"></i>Layanan diubah. Silakan masukkan kembali kode promo jika ada.';
+                hitungTotal();
+            }
+        }
+
         window.onload = function() {
             hitungTotal();
+            
+            document.getElementById('lepasKunci').addEventListener('change', resetPromo);
+            document.getElementById('denganSupir').addEventListener('change', resetPromo);
+
+            document.getElementById('btnApplyPromo').addEventListener('click', function() {
+                const code = document.getElementById('inputKodePromo').value.trim();
+                const feedback = document.getElementById('promoFeedback');
+                const totalSebelumPromo = hitungTotalSebelumPromo();
+
+                if (!code) {
+                    feedback.style.display = 'block';
+                    feedback.className = 'small mt-2 text-danger';
+                    feedback.innerHTML = '<i class="bi bi-x-circle me-1"></i>Masukkan kode promo terlebih dahulu.';
+                    return;
+                }
+
+                fetch("{{ route('pelanggan.promo.check') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                    },
+                    body: JSON.stringify({
+                        kode_promo: code,
+                        total_bayar: totalSebelumPromo
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        appliedPromo = {
+                            id: data.id_promo,
+                            code: code,
+                            potongan: data.potongan
+                        };
+                        potonganHarga = data.potongan;
+                        feedback.style.display = 'block';
+                        feedback.className = 'small mt-2 text-success fw-semibold';
+                        feedback.innerHTML = '<i class="bi bi-check-circle me-1"></i>' + data.message;
+                        
+                        document.getElementById('appliedIdPromo').value = data.id_promo;
+                        hitungTotal();
+                    } else {
+                        appliedPromo = null;
+                        potonganHarga = 0;
+                        feedback.style.display = 'block';
+                        feedback.className = 'small mt-2 text-danger';
+                        feedback.innerHTML = '<i class="bi bi-x-circle me-1"></i>' + data.message;
+                        
+                        document.getElementById('appliedIdPromo').value = '';
+                        hitungTotal();
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    feedback.style.display = 'block';
+                    feedback.className = 'small mt-2 text-danger';
+                    feedback.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Terjadi kesalahan sistem.';
+                });
+            });
         };
     </script>
 

@@ -67,8 +67,6 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ route('admin.kondisiUlasan.index') }}"
-                        <li class="nav-item">
                             <a href="{{ route('admin.verifikasi.index') }}"
                                 class="nav-link rounded d-flex align-items-center px-3 py-2 mb-1 {{ request()->routeIs('admin.verifikasi.*') ? 'bg-primary bg-opacity-10 text-primary fw-bold shadow-sm' : 'text-dark fw-medium' }}">
                                 <i
@@ -76,6 +74,8 @@
                                 Verifikasi Pengguna
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="{{ route('admin.kondisiUlasan.index') }}"
                                 class="nav-link rounded d-flex align-items-center px-3 py-2 mb-1 {{ request()->routeIs('admin.kondisiUlasan.*') ? 'bg-primary bg-opacity-10 text-primary fw-bold shadow-sm' : 'text-dark fw-medium' }}">
                                 <i
                                     class="bi bi-star me-3 fs-5 {{ request()->routeIs('admin.kondisiUlasan.*') ? '' : 'text-muted' }}"></i>
@@ -97,8 +97,6 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ route('admin.user.index') }}"
-                        <li class="nav-item">
                             <a href="{{ route('admin.klaim.index') }}"
                                 class="nav-link rounded d-flex align-items-center px-3 py-2 mb-1 {{ request()->routeIs('admin.klaim.*') ? 'bg-primary bg-opacity-10 text-primary fw-bold shadow-sm' : 'text-dark fw-medium' }}">
                                 <i
@@ -106,6 +104,16 @@
                                 Pengajuan Klaim
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="{{ route('admin.promo.index') }}"
+                                class="nav-link rounded d-flex align-items-center px-3 py-2 mb-1 {{ request()->routeIs('admin.promo.*') ? 'bg-primary bg-opacity-10 text-primary fw-bold shadow-sm' : 'text-dark fw-medium' }}">
+                                <i
+                                    class="bi bi-tag me-3 fs-5 {{ request()->routeIs('admin.promo.*') ? '' : 'text-muted' }}"></i>
+                                Manajemen Promo
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('admin.user.index') }}"
                                 class="nav-link rounded d-flex align-items-center px-3 py-2 mb-1 {{ request()->routeIs('admin.user.*') ? 'bg-primary bg-opacity-10 text-primary fw-bold shadow-sm' : 'text-dark fw-medium' }}">
                                 <i
                                     class="bi bi-people me-3 fs-5 {{ request()->routeIs('admin.user.*') ? '' : 'text-muted' }}"></i>

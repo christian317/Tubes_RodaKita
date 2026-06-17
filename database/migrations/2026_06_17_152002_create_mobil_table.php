@@ -27,12 +27,12 @@ return new class extends Migration
             $table->string('status_mobil', 20);
             $table->string('gambar', 255);
             $table->string('deskripsi', 255)->nullable();
-            
+
             $table->foreign('id_brand')->references('id')->on('brand');
             $table->foreign('id_kategori')->references('id')->on('kategori');
             $table->foreign('id_pemilik_mobil')->references('id_user')->on('pemilik_mobil');
         });
-        }
+    }
 
     /**
      * Reverse the migrations.

@@ -6,6 +6,7 @@
 {{-- 1. PASTE CSS FLATPICKR LANGSUNG DI SINI --}}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_blue.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <style>
     .kalender-input { cursor: pointer; background-color: #fff !important; }
 </style>
@@ -28,7 +29,7 @@
     <div class="row g-4 g-lg-5">
         {{-- KOLOM KIRI: FOTO MOBIL --}}
         <div class="col-lg-7">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden position-sticky" style="top: 100px;">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
                 <div class="bg-light" style="height: 400px;">
                     @if($mobil->gambar)
                         <img src="{{ asset('storage/' . $mobil->gambar) }}" class="w-100 h-100 object-fit-cover" alt="{{ $mobil->model }}">
@@ -36,6 +37,26 @@
                         <div class="w-100 h-100 d-flex justify-content-center align-items-center text-muted flex-column">
                             <i class="bi bi-car-front display-1 opacity-25"></i>
                             <span class="mt-3 fw-medium">Tidak ada foto</span>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            {{-- LOKASI PENJEMPUTAN --}}
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Lokasi Penjemputan</h5>
+                    
+                    @if($mobil->latitude && $mobil->longitude)
+                        <div class="mb-3 p-3 bg-light rounded-3 border">
+                            <span class="fw-semibold text-dark d-block mb-1">Alamat Penjemputan:</span>
+                            <span class="text-muted small">{{ $mobil->alamat_jemput }}</span>
+                        </div>
+                        <div id="detailMap" style="height: 250px; border-radius: 12px; border: 1px solid #e2e8f0;"></div>
+                    @else
+                        <div class="text-center p-4 bg-light rounded-3 border text-muted">
+                            <i class="bi bi-map fs-1 opacity-50 d-block mb-2"></i>
+                            <span class="small">Lokasi penjemputan belum diatur oleh admin.</span>
                         </div>
                     @endif
                 </div>
@@ -253,6 +274,23 @@
 {{-- 2. PASTE JAVASCRIPT FLATPICKR LANGSUNG DI BAWAH CONTAINER UTAMA --}}
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://npmcdn.com/flatpickr/dist/l10n/id.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<script>
+    @if($mobil->latitude && $mobil->longitude)
+    document.addEventListener("DOMContentLoaded", function() {
+        var map = L.map('detailMap').setView([{{ $mobil->latitude }}, {{ $mobil->longitude }}], 15);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        L.marker([{{ $mobil->latitude }}, {{ $mobil->longitude }}]).addTo(map)
+            .bindPopup("<b>Lokasi Penjemputan</b><br>{{ $mobil->model }}")
+            .openPopup();
+    });
+    @endif
+</script>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {

@@ -2,23 +2,28 @@
 
 namespace Tests\Feature;
 
+use App\Models\Booking;
+use App\Models\JadwalLiburan;
+use App\Models\Mobil;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
-use App\Models\User;
-use App\Models\Mobil;
-use App\Models\Booking;
-use App\Models\JadwalLiburan;
 
 class ComprehensiveAppTest extends TestCase
 {
     use RefreshDatabase;
 
     protected $admin;
+
     protected $mitra;
+
     protected $pelanggan;
+
     protected $brandId;
+
     protected $kategoriId;
 
     protected function setUp(): void
@@ -142,7 +147,7 @@ class ComprehensiveAppTest extends TestCase
             'transmisi' => 'Automatic',
             'kapasitas_penumpang' => 7,
             'tahun' => 2023,
-            'gambar' => \Illuminate\Http\UploadedFile::fake()->image('fortuner.jpg'),
+            'gambar' => UploadedFile::fake()->image('fortuner.jpg'),
             'status_mobil' => 'tersedia',
             'deskripsi' => 'Fortuner gagah.',
         ]);

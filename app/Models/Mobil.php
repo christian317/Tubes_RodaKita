@@ -14,6 +14,7 @@ class Mobil extends Model
         'id_brand', 'id_kategori', 'id_pemilik_mobil', 'model', 'plat_nomer',
         'harga_sewa', 'transmisi', 'kapasitas_penumpang', 'tahun',
         'status_katalog', 'status_mobil', 'gambar', 'deskripsi',
+        'latitude', 'longitude', 'alamat_jemput',
     ];
 
     public function brand()

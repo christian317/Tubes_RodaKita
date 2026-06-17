@@ -19,10 +19,10 @@ return new class extends Migration
             $table->integer('rating');
             $table->text('catatan')->nullable();
             $table->timestamps();
-            
+
             $table->foreign('id_booking')->references('id')->on('booking')->onDelete('cascade');
         });
-        }
+    }
 
     /**
      * Reverse the migrations.

@@ -19,10 +19,10 @@ return new class extends Migration
             $table->string('bukti_transfer', 255);
             $table->string('catatan', 255)->nullable();
             $table->timestamps();
-            
+
             $table->foreign('id_pemilik_mobil')->references('id_user')->on('pemilik_mobil')->onDelete('cascade');
         });
-        }
+    }
 
     /**
      * Reverse the migrations.

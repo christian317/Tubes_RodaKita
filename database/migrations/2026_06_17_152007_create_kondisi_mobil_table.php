@@ -24,10 +24,10 @@ return new class extends Migration
             $table->text('kondisi_eksterior');
             $table->text('kondisi_interior');
             $table->timestamps();
-            
+
             $table->foreign('id_booking')->references('id')->on('booking')->onDelete('cascade');
         });
-        }
+    }
 
     /**
      * Reverse the migrations.

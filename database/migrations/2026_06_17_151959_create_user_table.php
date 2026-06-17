@@ -20,10 +20,10 @@ return new class extends Migration
             $table->string('password', 255);
             $table->string('alamat', 500);
             $table->string('no_telepon', 15);
-            
+
             $table->foreign('id_role')->references('id')->on('role');
         });
-        }
+    }
 
     /**
      * Reverse the migrations.

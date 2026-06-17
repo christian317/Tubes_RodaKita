@@ -17,10 +17,10 @@ return new class extends Migration
             $table->string('nama_bank', 50);
             $table->string('nomor_rekening', 50);
             $table->string('nomor_ktp', 50)->unique();
-            
+
             $table->foreign('id_user')->references('id')->on('user');
         });
-        }
+    }
 
     /**
      * Reverse the migrations.

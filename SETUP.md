@@ -164,6 +164,18 @@ Pelanggan (role 2) and Mitra (role 3) users can be created by Admin at `/admin/u
 4. Admin reviews at `/admin/klaim` -> Approve (with biaya_disetujui) or Reject (with note)
 5. Mitra can track claim status at `/mitra/klaim`
 
+### Promo & Voucher Code System (Discount Management)
+
+1. **Admin CRUD**: Admin can manage vouchers at `/admin/promo` (add code, discount type [percentage/nominal], min transaction, quota, expiration date).
+2. **Customer Checkout**: Customer can enter promo codes during checkout.
+3. **Dynamic Calculations**: The total payment is calculated and discounted in real-time via AJAX `/pelanggan/promo/check`.
+4. **Midtrans Integration**: The discounted amount is passed to Midtrans Snap. Commission splits (70% for Mitra) are calculated based on the final discounted amount.
+
+### LeafletJS Maps Integration (Pickup Location)
+
+1. **Admin Car Creation/Edit**: Admin can place a marker on an interactive Leaflet map to set `latitude` and `longitude` coordinates for a car, along with an `alamat_jemput` address text field.
+2. **Customer Car Detail**: Displays the pickup location map pin on the car details page `/pelanggan/mobil/{id}`.
+
 ---
 
 ## New Routes Added
@@ -181,6 +193,13 @@ Pelanggan (role 2) and Mitra (role 3) users can be created by Admin at `/admin/u
 | GET    | `/mitra/klaim/{id}` | Claim detail |
 | GET    | `/admin/klaim` | Admin claim management |
 | POST   | `/admin/klaim/{id}/proses` | Approve/reject claim |
+| GET    | `/admin/promo` | Admin promo code management dashboard |
+| GET    | `/admin/promo/create` | Form to create a new promo code |
+| POST   | `/admin/promo/store` | Save a new promo code |
+| GET    | `/admin/promo/{id}/edit` | Form to edit an existing promo code |
+| PUT    | `/admin/promo/{id}` | Update an existing promo code |
+| DELETE | `/admin/promo/{id}` | Delete a promo code |
+| POST   | `/pelanggan/promo/check` | Asynchronously check promo code validity and calculate discount |
 
 ---
 
@@ -190,8 +209,11 @@ Pelanggan (role 2) and Mitra (role 3) users can be created by Admin at `/admin/u
 |-------|-------|------------|---------------|
 | `VerifikasiAkun` | `verifikasi_akun` | Yes (default) | `belongsTo(User)` via `id_user` |
 | `KlaimAsuransi` | `klaim_asuransi` | Yes (default) | `belongsTo(Booking)`, `belongsTo(User)` |
+| `Promo` | `promo` | Yes (default) | `hasMany(Pembayaran)` |
 
 `User` model also gained: `hasOne(VerifikasiAkun::class)`.
+`Pembayaran` model also gained: `belongsTo(Promo::class)`.
+`Mobil` model also gained: `latitude`, `longitude`, `alamat_jemput` columns.
 
 ## Running Automated Tests
 
@@ -204,10 +226,14 @@ composer run test
 
 ### Available Test Suites:
 1. **Safety & Booking Tests (`SafetyAndBookingTest`)**:
-   Tests the trust & safety restrictions and booking date validation:
+   Tests the trust & safety restrictions, booking date validation, promo code system, and coordinates:
    - `booking no overlap succeeds`: Validates that non-overlapping bookings succeed.
    - `booking overlap fails`: Verifies that overlapping bookings are blocked.
    - `verification flow`: Tests customer document upload (KTP/SIM/selfie) and Admin approval.
+   - `pelanggan can apply valid promo code`: Tests checking coupon constraints, dynamic pricing reduction, and commission calculations.
+   - `pelanggan cannot apply expired or invalid promo code`: Verifies expired/depleted promo codes are ignored.
+   - `car coordinates stored correctly on creation`: Tests admin creating car with Leaflet latitude, longitude, and pickup address.
+   - `car coordinates stored correctly on update`: Tests admin modifying car pickup coordinates and address.
    
    To run only this suite:
    ```powershell

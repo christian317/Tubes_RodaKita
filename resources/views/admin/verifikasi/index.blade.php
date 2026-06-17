@@ -26,42 +26,42 @@
                     </tr>
                 </thead>
                 <tbody class="border-top">
-                    @forelse(\ as \)
+                    @forelse($verifikasis as $v)
                         <tr>
                             <td class="ps-4 py-3">
-                                <div class="fw-bold text-dark">{{ \->user->nama ?? '-' }}</div>
-                                <div class="small text-muted">{{ \->user->email ?? '-' }}</div>
+                                <div class="fw-bold text-dark">{{ $v->user->nama ?? '-' }}</div>
+                                <div class="small text-muted">{{ $v->user->email ?? '-' }}</div>
                             </td>
                             <td class="py-3">
                                 <div class="d-flex gap-2">
-                                    @if(\->foto_ktp)
-                                        <a href="{{ asset('storage/' . \->foto_ktp) }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-3">KTP</a>
+                                    @if($v->foto_ktp)
+                                        <a href="{{ asset('storage/' . $v->foto_ktp) }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-3">KTP</a>
                                     @endif
-                                    @if(\->foto_sim)
-                                        <a href="{{ asset('storage/' . \->foto_sim) }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-3">SIM</a>
+                                    @if($v->foto_sim)
+                                        <a href="{{ asset('storage/' . $v->foto_sim) }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-3">SIM</a>
                                     @endif
-                                    @if(\->foto_selfie)
-                                        <a href="{{ asset('storage/' . \->foto_selfie) }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-3">Selfie</a>
+                                    @if($v->foto_selfie)
+                                        <a href="{{ asset('storage/' . $v->foto_selfie) }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-3">Selfie</a>
                                     @endif
                                 </div>
                             </td>
-                            <td class="py-3 text-muted">{{ \->created_at ? \->created_at->format('d M Y H:i') : '-' }}</td>
+                            <td class="py-3 text-muted">{{ $v->created_at ? $v->created_at->format('d M Y H:i') : '-' }}</td>
                             <td class="pe-4 py-3 text-end">
-                                <form action="{{ route('admin.verifikasi.approve', \->id) }}" method="POST" class="d-inline">
+                                <form action="{{ route('admin.verifikasi.approve', $v->id) }}" method="POST" class="d-inline">
                                     @csrf
                                     <button type="submit" class="btn btn-sm btn-success fw-bold rounded-3 px-3">
                                         <i class="bi bi-check-lg me-1"></i> Setujui
                                     </button>
                                 </form>
                                 <button type="button" class="btn btn-sm btn-danger fw-bold rounded-3 px-3"
-                                        data-bs-toggle="modal" data-bs-target="#rejectModal{{ \->id }}">
+                                        data-bs-toggle="modal" data-bs-target="#rejectModal{{ $v->id }}">
                                     <i class="bi bi-x-lg me-1"></i> Tolak
                                 </button>
 
-                                <div class="modal fade" id="rejectModal{{ \->id }}" tabindex="-1">
+                                <div class="modal fade" id="rejectModal{{ $v->id }}" tabindex="-1">
                                     <div class="modal-dialog modal-dialog-centered">
                                         <div class="modal-content rounded-4 border-0 shadow">
-                                            <form action="{{ route('admin.verifikasi.reject', \->id) }}" method="POST">
+                                            <form action="{{ route('admin.verifikasi.reject', $v->id) }}" method="POST">
                                                 @csrf
                                                 <div class="modal-header border-bottom px-4 py-3 bg-light rounded-top-4">
                                                     <h5 class="modal-title fw-bold">Tolak Verifikasi</h5>

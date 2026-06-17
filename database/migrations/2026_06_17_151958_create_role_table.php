@@ -16,7 +16,7 @@ return new class extends Migration
             $table->integer('id')->primary();
             $table->string('nama_role', 45);
         });
-        }
+    }
 
     /**
      * Reverse the migrations.

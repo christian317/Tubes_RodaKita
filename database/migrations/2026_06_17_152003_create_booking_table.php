@@ -23,11 +23,11 @@ return new class extends Migration
             $table->string('status', 20);
             $table->string('tipe_layanan', 50);
             $table->string('foto_ktp', 255)->nullable();
-            
+
             $table->foreign('id_user')->references('id')->on('user');
             $table->foreign('id_mobil')->references('id')->on('mobil');
         });
-        }
+    }
 
     /**
      * Reverse the migrations.

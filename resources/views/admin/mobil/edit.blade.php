@@ -118,6 +118,37 @@
                         </div>
                     </div>
 
+                    {{-- Section: Lokasi Penjemputan --}}
+                    <div class="bg-white p-4 rounded-4 shadow-sm mb-4 border">
+                        <p class="small fw-bold text-uppercase text-muted mb-3 letter-spacing-1">
+                            <i class="bi bi-geo-alt-fill me-1"></i> Lokasi Penjemputan Mobil
+                        </p>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-dark">Alamat Penjemputan Detail <span
+                                        class="text-danger">*</span></label>
+                                <textarea name="alamat_jemput" class="form-control rounded-3" rows="2"
+                                    placeholder="cth. Jalan Raya Surabaya No. 45, dekat Stasiun" required>{{ $mobil->alamat_jemput }}</textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-dark">Latitude <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" name="latitude" id="latitude" class="form-control rounded-3 bg-light"
+                                    value="{{ $mobil->latitude }}" placeholder="Pilih lokasi di peta" readonly required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-dark">Longitude <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" name="longitude" id="longitude" class="form-control rounded-3 bg-light"
+                                    value="{{ $mobil->longitude }}" placeholder="Pilih lokasi di peta" readonly required />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-dark mb-2">Pilih Titik Lokasi di Peta (Geser Penanda)</label>
+                                <div id="map"></div>
+                            </div>
+                        </div>
+                    </div>
+
                     {{-- Section: Media --}}
                     <div class="bg-white p-4 rounded-4 shadow-sm border">
                         <p class="small fw-bold text-uppercase text-muted mb-3 letter-spacing-1">
@@ -166,3 +197,63 @@
     </div>
 </div>
 @endsection
+
+@push('styles')
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <style>
+        #map {
+            height: 350px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+@endpush
+
+@push('scripts')
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var defaultLat = {{ $mobil->latitude ?? -6.200000 }};
+            var defaultLng = {{ $mobil->longitude ?? 106.816666 }};
+            var hasCoordinates = {{ $mobil->latitude ? 'true' : 'false' }};
+
+            var map = L.map('map').setView([defaultLat, defaultLng], 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            var marker = L.marker([defaultLat, defaultLng], {
+                draggable: true
+            }).addTo(map);
+
+            function updateCoordinates(lat, lng) {
+                document.getElementById('latitude').value = lat.toFixed(8);
+                document.getElementById('longitude').value = lng.toFixed(8);
+            }
+
+            marker.on('dragend', function (e) {
+                var position = marker.getLatLng();
+                updateCoordinates(position.lat, position.lng);
+            });
+
+            map.on('click', function (e) {
+                marker.setLatLng(e.latlng);
+                updateCoordinates(e.latlng.lat, e.latlng.lng);
+            });
+
+            // If we don't have coordinates saved yet, try to geolocate
+            if (!hasCoordinates && navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var lat = position.coords.latitude;
+                    var lng = position.coords.longitude;
+                    map.setView([lat, lng], 13);
+                    marker.setLatLng([lat, lng]);
+                    updateCoordinates(lat, lng);
+                }, function(err) {
+                    console.log("Geolocation error: ", err.message);
+                });
+            }
+        });
+    </script>
+@endpush

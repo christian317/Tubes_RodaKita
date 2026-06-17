@@ -21,10 +21,10 @@ return new class extends Migration
             $table->string('kegiatan', 255);
             $table->string('lokasi', 255)->nullable();
             $table->timestamps();
-            
+
             $table->foreign('id_booking')->references('id')->on('booking')->onDelete('cascade');
         });
-        }
+    }
 
     /**
      * Reverse the migrations.

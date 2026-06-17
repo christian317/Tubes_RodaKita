@@ -22,10 +22,10 @@ return new class extends Migration
             $table->text('catatan_verifikasi')->nullable();
             $table->dateTime('verified_at')->nullable();
             $table->timestamps();
-            
+
             $table->foreign('id_user')->references('id')->on('user')->onDelete('cascade');
         });
-        }
+    }
 
     /**
      * Reverse the migrations.

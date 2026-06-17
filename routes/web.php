@@ -11,6 +11,7 @@ use App\Http\Controllers\MobilController;
 use App\Http\Controllers\MonitoringMobilController;
 use App\Http\Controllers\PelangganController;
 use App\Http\Controllers\PendapatanKomisiController;
+use App\Http\Controllers\PromoController;
 use App\Http\Controllers\RiwayatBookingController;
 use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\UlasanPelangganController;
@@ -68,6 +69,14 @@ Route::middleware(['auth', 'role:1'])->group(function () {
     // transaksi
     Route::get('/admin/keuangan', [TransaksiController::class, 'index'])->name('admin.transaksi.index');
     Route::post('/admin/keuangan/transfer', [TransaksiController::class, 'transferDana'])->name('admin.transaksi.transfer');
+
+    // manajemen promo
+    Route::get('/admin/promo', [PromoController::class, 'index'])->name('admin.promo.index');
+    Route::get('/admin/promo/create', [PromoController::class, 'create'])->name('admin.promo.create');
+    Route::post('/admin/promo/store', [PromoController::class, 'store'])->name('admin.promo.store');
+    Route::get('/admin/promo/{id}/edit', [PromoController::class, 'edit'])->name('admin.promo.edit');
+    Route::put('/admin/promo/{id}', [PromoController::class, 'update'])->name('admin.promo.update');
+    Route::delete('/admin/promo/{id}', [PromoController::class, 'destroy'])->name('admin.promo.destroy');
 });
 
 // user
@@ -85,6 +94,9 @@ Route::middleware(['auth', 'role:2'])->group(function () {
     Route::get('/pelanggan/jadwal-liburan/{id_booking}', [JadwalLiburanController::class, 'detail'])->name('pelanggan.jadwal.detail');
     Route::post('/pelanggan/jadwal-liburan/{id_booking}', [JadwalLiburanController::class, 'create'])->name('pelanggan.jadwal.store');
     Route::delete('/pelanggan/jadwal-liburan/hapus/{id}', [JadwalLiburanController::class, 'destroy'])->name('pelanggan.jadwal.destroy');
+
+    // check promo
+    Route::post('/pelanggan/promo/check', [PromoController::class, 'checkPromo'])->name('pelanggan.promo.check');
 });
 
 // mitra penyewa mobil

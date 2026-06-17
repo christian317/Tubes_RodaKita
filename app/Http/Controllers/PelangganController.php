@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use App\Models\Mobil;
 use App\Models\Pembayaran;
+use App\Models\Promo;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -90,6 +91,7 @@ class PelangganController extends Controller
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
             'tipe_layanan' => 'required|in:lepas_kunci,dengan_supir',
             'foto_ktp' => 'required_if:tipe_layanan,lepas_kunci|image|mimes:jpeg,png,jpg|max:2048',
+            'applied_id_promo' => 'nullable|exists:promo,id',
         ]);
 
         $mobil = Mobil::findOrFail($request->id_mobil);
@@ -110,9 +112,6 @@ class PelangganController extends Controller
         $biaya_sewa_mobil = $jumlah_hari * $mobil->harga_sewa;
         $biaya_supir = ($request->tipe_layanan == 'dengan_supir') ? (150000 * $jumlah_hari) : 0;
         $total_bayar = $biaya_sewa_mobil + $biaya_supir;
-
-        // LOGIKA PEMBAGIAN KOMISI (70% Mitra, 30% Perusahaan)
-        $komisi_mitra = $total_bayar * 0.70;
 
         // PROSES UPLOAD FOTO KTP JIKA ADA
         $pathKtp = null;
@@ -135,6 +134,34 @@ class PelangganController extends Controller
 
         DB::beginTransaction();
         try {
+            $potongan_harga = 0;
+            $id_promo = null;
+            if ($request->filled('applied_id_promo')) {
+                $promo = Promo::lockForUpdate()->find($request->applied_id_promo);
+                if ($promo) {
+                    $today = Carbon::today();
+                    $isExpired = Carbon::parse($promo->tanggal_kadaluarsa)->lt($today);
+
+                    if (! $isExpired && $promo->kuota > 0 && $total_bayar >= $promo->minimal_transaksi) {
+                        $id_promo = $promo->id;
+                        if ($promo->tipe_potongan === 'persen') {
+                            $potongan_harga = ($promo->nominal_potongan / 100) * $total_bayar;
+                        } else {
+                            $potongan_harga = $promo->nominal_potongan;
+                        }
+
+                        if ($potongan_harga > $total_bayar) {
+                            $potongan_harga = $total_bayar;
+                        }
+
+                        $promo->decrement('kuota');
+                    }
+                }
+            }
+
+            $total_bayar_akhir = $total_bayar - $potongan_harga;
+            $komisi_mitra = $total_bayar_akhir * 0.70;
+
             $booking = Booking::create([
                 'id_user' => Auth::id(),
                 'id_mobil' => $mobil->id,
@@ -149,9 +176,11 @@ class PelangganController extends Controller
 
             $transaksi = Pembayaran::create([
                 'id_booking' => $booking->id,
-                'total_pembayaran' => $total_bayar,
+                'id_promo' => $id_promo,
+                'total_pembayaran' => $total_bayar_akhir,
+                'potongan_harga' => $potongan_harga,
                 'status_pembayaran' => 'belum_dibayar',
-                'komisi_pemilik' => $komisi_mitra, // Menyimpan 70% ke dalam database otomatis
+                'komisi_pemilik' => $komisi_mitra,
             ]);
 
             DB::commit();

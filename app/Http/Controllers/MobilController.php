@@ -156,8 +156,11 @@ class MobilController extends Controller
             'kapasitas_penumpang' => 'required|integer',
             'tahun' => 'required|integer',
             'gambar' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'status_mobil' => 'required|string|max:20',
+            'status_mobil' => 'nullable|string|max:20',
             'deskripsi' => 'nullable|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'alamat_jemput' => 'nullable|string',
         ]);
 
         // Upload Gambar ke folder storage/app/public/mobil
@@ -177,6 +180,9 @@ class MobilController extends Controller
             'status_mobil' => 'tersedia',
             'gambar' => $gambarPath,
             'deskripsi' => $request->deskripsi,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'alamat_jemput' => $request->alamat_jemput,
         ]);
 
         return redirect()->route('admin.mobil.index')->with('success', 'Mobil baru berhasil ditambahkan.');
@@ -209,6 +215,9 @@ class MobilController extends Controller
             'deskripsi' => 'nullable|string',
             'gambar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'status_mobil' => 'required|string|max:20',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'alamat_jemput' => 'nullable|string',
         ]);
 
         $dataUpdate = [
@@ -224,6 +233,9 @@ class MobilController extends Controller
             'status_katalog' => $request->has('status_katalog') ? 1 : 0,
             'status_mobil' => $request->status_mobil,
             'deskripsi' => $request->deskripsi,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'alamat_jemput' => $request->alamat_jemput,
         ];
 
         if ($request->hasFile('gambar')) {

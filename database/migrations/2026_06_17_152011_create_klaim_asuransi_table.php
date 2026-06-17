@@ -25,11 +25,11 @@ return new class extends Migration
             $table->dateTime('submitted_at')->nullable();
             $table->dateTime('processed_at')->nullable();
             $table->timestamps();
-            
+
             $table->foreign('id_booking')->references('id')->on('booking');
             $table->foreign('id_pemilik_mobil')->references('id')->on('user');
         });
-        }
+    }
 
     /**
      * Reverse the migrations.

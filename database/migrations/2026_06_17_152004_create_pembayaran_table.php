@@ -18,10 +18,10 @@ return new class extends Migration
             $table->decimal('total_pembayaran', 10, 2);
             $table->string('status_pembayaran', 50);
             $table->decimal('komisi_pemilik', 10, 2);
-            
+
             $table->foreign('id_booking')->references('id')->on('booking');
         });
-        }
+    }
 
     /**
      * Reverse the migrations.

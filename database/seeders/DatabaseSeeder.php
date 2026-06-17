@@ -109,7 +109,7 @@ class DatabaseSeeder extends Seeder
                 'nama_bank' => 'Mandiri',
                 'nomor_rekening' => '0987654321',
                 'nomor_ktp' => '3171012345670002',
-            ]
+            ],
         ]);
 
         // 5. Seed VerifikasiAkun records
@@ -137,7 +137,7 @@ class DatabaseSeeder extends Seeder
                 'verified_at' => null,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]
+            ],
         ]);
 
         // 6. Seed Brands
@@ -279,7 +279,6 @@ class DatabaseSeeder extends Seeder
                 'created_at' => now()->subDays(2),
                 'updated_at' => now()->subDays(1),
             ],
-            // Claim 2: Diajukan (Pending)
             [
                 'id_booking' => $booking2Id,
                 'id_pemilik_mobil' => $mitra1Id,
@@ -293,8 +292,27 @@ class DatabaseSeeder extends Seeder
                 'processed_at' => null,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]
+            ],
         ]);
+
+        // Generate dummy files in public storage to avoid 403/404 errors
+        $dummyImage = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
+        
+        $filesToCreate = [
+            'ktp_budi.jpg',
+            'sim_budi.jpg',
+            'selfie_budi.jpg',
+            'ktp_citra.jpg',
+            'sim_citra.jpg',
+            'selfie_citra.jpg',
+            'avanza_veloz.jpg',
+            'civic_turbo.jpg',
+            'hyundai_creta.jpg',
+        ];
+
+        foreach ($filesToCreate as $file) {
+            \Illuminate\Support\Facades\Storage::disk('public')->put($file, $dummyImage);
+        }
 
         $this->command->info('RodaKita dummy data successfully seeded!');
     }
