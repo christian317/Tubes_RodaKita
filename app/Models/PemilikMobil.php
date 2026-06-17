@@ -24,4 +24,9 @@ class PemilikMobil extends Model
     {
         return $this->belongsTo(User::class, 'id_user', 'id');
     }
+
+    public function pencairan()
+    {
+        return $this->hasMany(PencairanKomisi::class, 'id_pemilik_mobil', 'id_user');
+    }
 }

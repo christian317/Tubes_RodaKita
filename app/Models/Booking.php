@@ -37,4 +37,23 @@ class Booking extends Model
         return $this->hasOne(Pembayaran::class, 'id_booking', 'id');
     }
 
+    public function kondisiPengambilan()
+    {
+        return $this->hasOne(KondisiMobil::class, 'id_booking')->where('tipe', 'pengambilan');
+    }
+
+    public function kondisiPengembalian()
+    {
+        return $this->hasOne(KondisiMobil::class, 'id_booking')->where('tipe', 'pengembalian');
+    }
+
+    public function ulasanMobil()
+    {
+        return $this->hasOne(Ulasan::class, 'id_booking')->where('tipe', 'mobil');
+    }
+
+    public function ulasanPelanggan()
+    {
+        return $this->hasOne(Ulasan::class, 'id_booking')->where('tipe', 'pelanggan');
+    }
 }

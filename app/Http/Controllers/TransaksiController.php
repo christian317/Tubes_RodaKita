@@ -1,0 +1,69 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Pembayaran;
+use App\Models\PemilikMobil;
+use App\Models\PencairanKomisi;
+
+class TransaksiController extends Controller
+{
+    public function index()
+    {
+        // 1. Hitung total profit bersih perusahaan (30%) dari transaksi yang sudah dibayar/selesai
+        $profitPerusahaan = Pembayaran::whereIn('status_pembayaran', ['dibayar', 'lunas', 'selesai'])
+            ->selectRaw('SUM(total_pembayaran - komisi_pemilik) as profit')
+            ->value('profit') ?? 0;
+
+        // 2. Hitung total saldo yang masih mengendap (belum dicairkan ke mitra)
+        $mitras = PemilikMobil::with('user')->get();
+        $totalHutangMitra = 0;
+
+        foreach ($mitras as $mitra) {
+            // Pendapatan Mitra (70% dari pesanan mobil miliknya)
+            $pendapatan = Pembayaran::whereHas('booking.mobil', function($q) use($mitra) {
+                $q->where('id_pemilik_mobil', $mitra->id_user);
+            })->whereIn('status_pembayaran', ['dibayar', 'lunas', 'selesai'])->sum('komisi_pemilik');
+
+            // Total yang sudah ditransfer admin ke mitra ini
+            $dicairkan = PencairanKomisi::where('id_pemilik_mobil', $mitra->id_user)->sum('jumlah');
+
+            // Saldo saat ini
+            $mitra->saldo_berjalan = $pendapatan - $dicairkan;
+            $mitra->total_pendapatan = $pendapatan;
+            
+            $totalHutangMitra += $mitra->saldo_berjalan;
+        }
+
+        // 3. Ambil riwayat transfer pencairan
+        $riwayatPencairan = PencairanKomisi::with('pemilik.user')->orderBy('created_at', 'desc')->get();
+
+        return view('admin.transaksi.index', compact('profitPerusahaan', 'totalHutangMitra', 'mitras', 'riwayatPencairan'));
+    }
+
+    public function transferDana(Request $request)
+    {
+        $request->validate([
+            'id_pemilik_mobil' => 'required|exists:pemilik_mobil,id_user',
+            'jumlah_transfer' => 'required|numeric|min:10000',
+            'bukti_transfer' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'catatan' => 'nullable|string'
+        ]);
+
+        try {
+            $path = $request->file('bukti_transfer')->store('bukti_pencairan', 'public');
+
+            PencairanKomisi::create([
+                'id_pemilik_mobil' => $request->id_pemilik_mobil,
+                'jumlah' => $request->jumlah_transfer,
+                'bukti_transfer' => $path,
+                'catatan' => $request->catatan,
+            ]);
+
+            return back()->with('success', 'Dana komisi berhasil ditransfer ke mitra dan saldo telah dipotong.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal memproses pencairan: ' . $e->getMessage());
+        }
+    }
+}

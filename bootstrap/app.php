@@ -10,9 +10,15 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function ($middleware) {
+    ->withMiddleware(function (Middleware $middleware) {
+        // 1. Daftarkan Alias Middleware Anda
         $middleware->alias([
             'role' => \App\Http\Middleware\AuthenticateRole::class,
+        ]);
+
+        // 2. TAMBAHAN PENTING: Matikan CSRF untuk rute notifikasi Midtrans
+        $middleware->validateCsrfTokens(except: [
+            '/midtrans/callback'
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

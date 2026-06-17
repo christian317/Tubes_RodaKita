@@ -56,14 +56,13 @@ class AuthController extends Controller
             'password' => 'required|string|min:6',
             'alamat' => 'required|string|max:500',
             'no_telepon' => 'required|string|max:15',
-            'role' => 'required|in:pelanggan,pemilik'
+            // Validasi role dihapus karena pelanggan tidak lagi memilih role
         ]);
 
-        // Cari ID Role berdasarkan input (Default ke pelanggan)
-        // Pastikan nama_role di tabel role Anda sesuai ('pelanggan' atau 'pemilik')
-        $role = DB::table('role')->where('nama_role', $request->role)->first();
+        // Ambil ID role khusus 'pelanggan'
+        $role = DB::table('role')->where('nama_role', 'pelanggan')->first();
 
-        // Jika tidak ketemu, fallback (misal ID 2 adalah default Pelanggan)
+        // Jika tidak ketemu, fallback (misal ID 2 adalah default Pelanggan di DB Anda)
         $id_role = $role ? $role->id : 2;
 
         User::create([

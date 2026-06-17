@@ -24,4 +24,20 @@ class Mobil extends Model
     public function pemilik() {
         return $this->belongsTo(User::class, 'id_pemilik_mobil', 'id');
     }
+
+    public function ulasans()
+    {
+        return $this->hasManyThrough(
+            \App\Models\Ulasan::class, 
+            \App\Models\Booking::class, 
+            'id_mobil',    // Foreign key pada tabel booking
+            'id_booking',  // Foreign key pada tabel ulasan
+            'id',          // Local key pada tabel mobil
+            'id'           // Local key pada tabel booking
+        )->where('ulasan.tipe', 'mobil'); // Hanya ambil ulasan untuk target mobil
+    }
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class, 'id_mobil');
+    }
 }

@@ -7,9 +7,16 @@ use App\Http\Controllers\PelangganController;
 use App\Http\Controllers\MitraMobilController;
 use App\Http\Controllers\MobilController;
 use App\Http\Controllers\AdminJadwalBookingController;
+use App\Http\Controllers\RiwayatBookingController;
+use App\Http\Controllers\JadwalLiburanController;
+use App\Http\Controllers\KondisiUlasanController;
+use App\Http\Controllers\TransaksiController;
+use App\Http\Controllers\MonitoringMobilController;
+use App\Http\Controllers\PendapatanKomisiController;
+use App\Http\Controllers\UlasanPelangganController;
 
 Route::get('/', function () {
-    return view('auth.login');
+    return view('welcome');
 });
 
 Route::get('/login', [AuthController::class, 'login'])->name('login');
@@ -49,11 +56,16 @@ Route::middleware(['auth', 'role:1'])->group(function () {
     Route::put('/admin/user/{id}', [AdminController::class, 'update_user'])->name('admin.user.update');
     Route::delete('/admin/user/{id}', [AdminController::class, 'destroy_user'])->name('admin.user.destroy');
     // jadwal booking
-    // Rute untuk Admin Manajemen Booking & Jadwal
     Route::get('/admin/booking', [AdminJadwalBookingController::class, 'index'])->name('admin.booking.index');
     Route::post('/admin/booking/{id}/approve', [AdminJadwalBookingController::class, 'approve'])->name('admin.booking.approve');
     Route::post('/admin/booking/{id}/reject', [AdminJadwalBookingController::class, 'reject'])->name('admin.booking.reject');
-    Route::post('/admin/booking/{id}/status', [AdminJadwalBookingController::class, 'updateStatus'])->name('admin.booking.updateStatus');
+    Route::post('/admin/booking/{id}/serahkan', [AdminJadwalBookingController::class, 'serahkanMobil'])->name('admin.booking.serahkan');
+    Route::post('/admin/booking/{id}/terima', [AdminJadwalBookingController::class, 'terimaMobil'])->name('admin.booking.terima');
+    // riwayat kondisi & ulasan
+    Route::get('/admin/kondisi-ulasan', [KondisiUlasanController::class, 'index'])->name('admin.kondisiUlasan.index');
+    // transaksi
+    Route::get('/admin/keuangan', [TransaksiController::class, 'index'])->name('admin.transaksi.index');
+    Route::post('/admin/keuangan/transfer', [TransaksiController::class, 'transferDana'])->name('admin.transaksi.transfer');
 });
 
 
@@ -65,10 +77,26 @@ Route::middleware(['auth', 'role:2'])->group(function () {
     // Pastikan berada di dalam middleware auth (pelanggan harus login)
     Route::get('/pelanggan/checkout/{id_mobil}', [PelangganController::class, 'checkout'])->name('pelanggan.order.checkout');
     Route::post('/pelanggan/checkout/proses', [PelangganController::class, 'prosesCheckout'])->name('pelanggan.order.checkout.proses');
+    // Rute Daftar Pesanan Pelanggan
+    Route::get('/pelanggan/riwayat-booking', [RiwayatBookingController::class, 'index'])->name('pelanggan.riwayatBooking.index');
+    Route::post('/pelanggan/pesanan/{id}/ulasan', [RiwayatBookingController::class, 'simpanUlasanMobil'])->name('pelanggan.ulasan.store');
+    // Route Jadwal Liburan
+    Route::get('/pelanggan/jadwal-liburan', [JadwalLiburanController::class, 'index'])->name('pelanggan.jadwal.index');
+    Route::get('/pelanggan/jadwal-liburan/{id_booking}', [JadwalLiburanController::class, 'detail'])->name('pelanggan.jadwal.detail');
+    Route::post('/pelanggan/jadwal-liburan/{id_booking}', [JadwalLiburanController::class, 'create'])->name('pelanggan.jadwal.store');
+    Route::delete('/pelanggan/jadwal-liburan/hapus/{id}', [JadwalLiburanController::class, 'destroy'])->name('pelanggan.jadwal.destroy');
 });
 
 
 // mitra penyewa mobil
 Route::middleware(['auth', 'role:3'])->group(function () {
     Route::get('mitra/dashboard', [MitraMobilController::class, 'dashboard'])->name('mitra.dashboard');
+    Route::get('/mitra/monitoring-mobil', [MonitoringMobilController::class, 'index'])->name('mitra.monitoringMobil.index');
+    Route::get('/mitra/komisi', [PendapatanKomisiController::class, 'index'])->name('mitra.komisi.index');
+    Route::get('/mitra/komisi/mobil/{id}', [PendapatanKomisiController::class, 'detail'])->name('mitra.komisi.detail');
+    Route::get('/mitra/ulasanPelanggan', [UlasanPelangganController::class, 'index'])->name('mitra.ulasanPelanggan.index');
+    Route::get('/mitra/ulasanPelanggan/mobil/{id}', [UlasanPelangganController::class, 'detail'])->name('mitra.ulasanPelanggan.detail');
 });
+
+// Rute publik khusus menerima respon notifikasi pembayaran Midtrans Snap
+Route::post('/midtrans/callback', [PelangganController::class, 'handleNotification']);
