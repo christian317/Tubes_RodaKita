@@ -147,6 +147,11 @@
                                     <button type="button"
                                         class="btn btn-sm btn-outline-primary fw-bold rounded-3 px-3 shadow-sm"
                                         data-bs-toggle="modal" data-bs-target="#jadwalModal{{ $m->id }}">
+                                    <button type="button"
+                                        class="btn btn-sm btn-danger fw-bold rounded-3 px-3 shadow-sm ms-1"
+                                        data-bs-toggle="modal" data-bs-target="#klaimModal{{ $m->id }}">
+                                        <i class="bi bi-shield-exclamation me-1"></i> Ajukan Klaim
+                                    </button>
                                         <i class="bi bi-calendar-week me-1"></i> Cek Jadwal
                                     </button>
                                 </td>
@@ -199,6 +204,44 @@
                                             <button type="button" class="btn btn-secondary rounded-3 px-4"
                                                 data-bs-dismiss="modal">Tutup</button>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- MODAL KLAIM ASURANSI --}}
+                            <div class="modal fade" id="klaimModal{{ $m->id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content rounded-4 border-0 shadow">
+                                        <form action="{{ route('mitra.klaim.store') }}" method="POST" enctype="multipart/form-data">
+                                            @csrf
+                                            <input type="hidden" name="id_booking" value="{{ optional($m->bookings->first())->id ?? '' }}">
+                                            <div class="modal-header border-bottom px-4 py-3 bg-light rounded-top-4">
+                                                <div>
+                                                    <h5 class="modal-title fw-bold text-dark mb-1"><i class="bi bi-shield-exclamation text-danger me-2"></i> Ajukan Klaim Asuransi</h5>
+                                                    <div class="small text-muted">{{ $m->brand->nama_brand ?? "" }} {{ $m->model }} ({{ $m->plat_nomer }})</div>
+                                                </div>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body p-4">
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold">Deskripsi Kerusakan</label>
+                                                    <textarea name="deskripsi_kerusakan" class="form-control" rows="3" required placeholder="Jelaskan kondisi kerusakan..."></textarea>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold">Estimasi Biaya Perbaikan (Rp)</label>
+                                                    <input type="number" name="estimasi_biaya" class="form-control" min="0" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold">Foto Bukti</label>
+                                                    <input type="file" name="foto_bukti[]" class="form-control" multiple accept="image/*">
+                                                    <div class="form-text">Upload foto kerusakan (opsional, maks 5MB per file)</div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer bg-light border-top p-3">
+                                                <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Batal</button>
+                                                <button type="submit" class="btn btn-danger rounded-3 fw-bold"><i class="bi bi-send me-1"></i> Ajukan Klaim</button>
+                                            </div>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
@@ -281,3 +324,4 @@
         });
     </script>
 @endpush
+

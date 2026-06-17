@@ -68,6 +68,14 @@
                         </a>
                     </li>
 
+                    {{-- MENU VERIFIKASI AKUN --}}
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('pelanggan.verifikasi.*') ? 'active text-primary fw-bold' : 'text-dark' }}"
+                            href="{{ route('pelanggan.verifikasi.index') }}">
+                            Verifikasi Akun
+                        </a>
+                    </li>
+
                 </ul>
 
                 {{-- User Profile & Logout --}}
