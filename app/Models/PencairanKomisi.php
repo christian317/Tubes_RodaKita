@@ -8,7 +8,7 @@ class PencairanKomisi extends Model
 {
     protected $table = 'pencairan_komisi';
 
-    protected $fillable = ['id_pemilik_mobil', 'jumlah', 'bukti_transfer', 'catatan'];
+    protected $fillable = ['id_pemilik_mobil', 'jumlah', 'status', 'nama_bank', 'nomor_rekening', 'nama_rekening', 'bukti_transfer', 'catatan', 'catatan_admin'];
 
     public function pemilik()
     {

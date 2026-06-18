@@ -167,6 +167,9 @@ class DatabaseSeeder extends Seeder
             'status_mobil' => 'tersedia',
             'gambar' => 'avanza_veloz.jpg',
             'deskripsi' => 'Mobil keluarga yang sangat nyaman, irit bahan bakar, dan dilengkapi AC double blower.',
+            'alamat_jemput' => 'Ruko Permata Hijau Blok C-12, Kebayoran Lama, Jakarta Selatan',
+            'latitude' => -6.221034,
+            'longitude' => 106.779145,
         ]);
 
         $mobil2Id = DB::table('mobil')->insertGetId([
@@ -183,6 +186,9 @@ class DatabaseSeeder extends Seeder
             'status_mobil' => 'tersedia',
             'gambar' => 'civic_turbo.jpg',
             'deskripsi' => 'Sedan sporty dengan performa mesin turbocharger yang bertenaga dan kabin mewah.',
+            'alamat_jemput' => 'Ruko Permata Hijau Blok C-12, Kebayoran Lama, Jakarta Selatan',
+            'latitude' => -6.221034,
+            'longitude' => 106.779145,
         ]);
 
         $mobil3Id = DB::table('mobil')->insertGetId([
@@ -199,6 +205,9 @@ class DatabaseSeeder extends Seeder
             'status_mobil' => 'tersedia',
             'gambar' => 'hyundai_creta.jpg',
             'deskripsi' => 'SUV modern dengan sunroof premium, Hyundai SmartSense, dan audio BOSE.',
+            'alamat_jemput' => 'Jl. Kemuning No. 15, Danurejan, Yogyakarta',
+            'latitude' => -7.795580,
+            'longitude' => 110.369490,
         ]);
 
         // 9. Seed Booking & Pembayaran (TC-4 Status Flow)
@@ -218,7 +227,7 @@ class DatabaseSeeder extends Seeder
         DB::table('pembayaran')->insert([
             'id_booking' => $booking1Id,
             'total_pembayaran' => 700000.00,
-            'status_pembayaran' => 'lunas',
+            'status_pembayaran' => 'dibayar',
             'komisi_pemilik' => 630000.00, // 90%
         ]);
 
@@ -230,7 +239,7 @@ class DatabaseSeeder extends Seeder
             'tanggal_selesai' => now()->addDays(2)->format('Y-m-d H:i:s'),
             'waktu_mulai' => '10:00',
             'waktu_selesai' => '10:00:00',
-            'status' => 'disewa',
+            'status' => 'disewakan',
             'tipe_layanan' => 'lepas_kunci',
             'foto_ktp' => 'ktp_budi.jpg',
         ]);
@@ -238,11 +247,11 @@ class DatabaseSeeder extends Seeder
         DB::table('pembayaran')->insert([
             'id_booking' => $booking2Id,
             'total_pembayaran' => 2250000.00,
-            'status_pembayaran' => 'lunas',
+            'status_pembayaran' => 'dibayar',
             'komisi_pemilik' => 2025000.00,
         ]);
 
-        // Booking 3: Pending Pembayaran
+        // Booking 3: Pending Pembayaran (Menunggu Pembambilan / Belum Diambil)
         $booking3Id = DB::table('booking')->insertGetId([
             'id_user' => $pelanggan1Id,
             'id_mobil' => $mobil3Id,
@@ -250,7 +259,7 @@ class DatabaseSeeder extends Seeder
             'tanggal_selesai' => now()->addDays(5)->format('Y-m-d H:i:s'),
             'waktu_mulai' => '08:00',
             'waktu_selesai' => '08:00:00',
-            'status' => 'menunggu_pembayaran',
+            'status' => 'menunggu',
             'tipe_layanan' => 'lepas_kunci',
             'foto_ktp' => 'ktp_budi.jpg',
         ]);
@@ -258,8 +267,28 @@ class DatabaseSeeder extends Seeder
         DB::table('pembayaran')->insert([
             'id_booking' => $booking3Id,
             'total_pembayaran' => 1000000.00,
-            'status_pembayaran' => 'belum_bayar',
+            'status_pembayaran' => 'belum_dibayar',
             'komisi_pemilik' => 900000.00,
+        ]);
+
+        // Booking 4: Dibatalkan (Cancelled)
+        $booking4Id = DB::table('booking')->insertGetId([
+            'id_user' => $pelanggan1Id,
+            'id_mobil' => $mobil3Id,
+            'tanggal_mulai' => now()->subDays(10)->format('Y-m-d H:i:s'),
+            'tanggal_selesai' => now()->subDays(8)->format('Y-m-d H:i:s'),
+            'waktu_mulai' => '08:00',
+            'waktu_selesai' => '08:00:00',
+            'status' => 'batal',
+            'tipe_layanan' => 'lepas_kunci',
+            'foto_ktp' => 'ktp_budi.jpg',
+        ]);
+
+        DB::table('pembayaran')->insert([
+            'id_booking' => $booking4Id,
+            'total_pembayaran' => 1000000.00,
+            'status_pembayaran' => 'gagal',
+            'komisi_pemilik' => 0.00,
         ]);
 
         // 10. Seed KlaimAsuransi

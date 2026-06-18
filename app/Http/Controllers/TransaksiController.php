@@ -26,8 +26,8 @@ class TransaksiController extends Controller
                 $q->where('id_pemilik_mobil', $mitra->id_user);
             })->whereIn('status_pembayaran', ['dibayar', 'lunas', 'selesai'])->sum('komisi_pemilik');
 
-            // Total yang sudah ditransfer admin ke mitra ini
-            $dicairkan = PencairanKomisi::where('id_pemilik_mobil', $mitra->id_user)->sum('jumlah');
+            // Total yang sudah ditransfer admin ke mitra ini (hanya yang statusnya disetujui)
+            $dicairkan = PencairanKomisi::where('id_pemilik_mobil', $mitra->id_user)->where('status', 'disetujui')->sum('jumlah');
 
             // Saldo saat ini
             $mitra->saldo_berjalan = $pendapatan - $dicairkan;
@@ -62,6 +62,41 @@ class TransaksiController extends Controller
             ]);
 
             return back()->with('success', 'Dana komisi berhasil ditransfer ke mitra dan saldo telah dipotong.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal memproses pencairan: '.$e->getMessage());
+        }
+    }
+
+    public function prosesPencairan(Request $request, $id)
+    {
+        $request->validate([
+            'aksi' => 'required|in:setujui,tolak',
+            'bukti_transfer' => 'required_if:aksi,setujui|image|mimes:jpeg,png,jpg|max:2048',
+            'catatan_admin' => 'required_if:aksi,tolak|nullable|string',
+        ]);
+
+        try {
+            $pencairan = PencairanKomisi::findOrFail($id);
+
+            if ($pencairan->status !== 'pending') {
+                return back()->with('error', 'Pengajuan pencairan ini sudah diproses sebelumnya.');
+            }
+
+            if ($request->aksi === 'setujui') {
+                $path = $request->file('bukti_transfer')->store('bukti_pencairan', 'public');
+                $pencairan->update([
+                    'status' => 'disetujui',
+                    'bukti_transfer' => $path,
+                    'catatan_admin' => $request->catatan_admin,
+                ]);
+                return back()->with('success', 'Pengajuan pencairan dana berhasil disetujui dan bukti transfer telah diunggah.');
+            } else {
+                $pencairan->update([
+                    'status' => 'ditolak',
+                    'catatan_admin' => $request->catatan_admin,
+                ]);
+                return back()->with('success', 'Pengajuan pencairan dana telah ditolak dengan catatan.');
+            }
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal memproses pencairan: '.$e->getMessage());
         }

@@ -7,6 +7,7 @@ use App\Models\Mobil;
 use App\Models\Pembayaran;
 use App\Models\PencairanKomisi;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 class PendapatanKomisiController extends Controller
 {
@@ -43,13 +44,15 @@ class PendapatanKomisiController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Disesuaikan dengan view
-        $totalDicairkanGlobal = $riwayatPencairan->sum('jumlah');
+        // Disesuaikan dengan view (hanya yang berstatus 'disetujui' yang mengurangi saldo berjalan)
+        $totalDicairkanGlobal = $riwayatPencairan->where('status', 'disetujui')->sum('jumlah');
         $tunggakanAdminGlobal = $totalPendapatanGlobal - $totalDicairkanGlobal;
+
+        $mitraProfile = \DB::table('pemilik_mobil')->where('id_user', $id_mitra)->first();
 
         // Path folder tetap menggunakan mitra.komisi.index
         return view('mitra.komisi.index', compact(
-            'mobils', 'riwayatPencairan', 'totalPendapatanGlobal', 'totalDicairkanGlobal', 'tunggakanAdminGlobal'
+            'mobils', 'riwayatPencairan', 'totalPendapatanGlobal', 'totalDicairkanGlobal', 'tunggakanAdminGlobal', 'mitraProfile'
         ));
     }
 
@@ -84,10 +87,60 @@ class PendapatanKomisiController extends Controller
             })->whereIn('status_pembayaran', ['dibayar', 'lunas', 'selesai'])->sum('komisi_pemilik');
         }
 
-        $totalDicairkanGlobal = PencairanKomisi::where('id_pemilik_mobil', $id_mitra)->sum('jumlah');
+        $totalDicairkanGlobal = PencairanKomisi::where('id_pemilik_mobil', $id_mitra)->where('status', 'disetujui')->sum('jumlah');
         $tunggakanAdminGlobal = $totalPendapatanGlobal - $totalDicairkanGlobal;
 
         // Path folder tetap menggunakan mitra.komisi.detail
         return view('mitra.komisi.detail', compact('mobil', 'bookings', 'totalKomisiMobil', 'tunggakanAdminGlobal'));
+    }
+
+    public function ajukanPencairan(Request $request)
+    {
+        $id_mitra = Auth::id();
+
+        $request->validate([
+            'jumlah' => 'required|numeric|min:10000',
+            'nama_bank' => 'required|string|max:100',
+            'nomor_rekening' => 'required|string|max:50',
+            'nama_rekening' => 'required|string|max:150',
+            'catatan' => 'nullable|string|max:255',
+        ]);
+
+        // Hitung total pendapatan global
+        $mobils = Mobil::where('id_pemilik_mobil', $id_mitra)->get();
+        $totalPendapatanGlobal = 0;
+        foreach ($mobils as $mobil) {
+            $pendapatanMobil = Pembayaran::whereHas('booking', function ($q) use ($mobil) {
+                $q->where('id_mobil', $mobil->id);
+            })->whereIn('status_pembayaran', ['dibayar', 'lunas', 'selesai'])->sum('komisi_pemilik');
+            $totalPendapatanGlobal += $pendapatanMobil;
+        }
+
+        $totalDicairkanGlobal = PencairanKomisi::where('id_pemilik_mobil', $id_mitra)->where('status', 'disetujui')->sum('jumlah');
+        $saldoBerjalan = $totalPendapatanGlobal - $totalDicairkanGlobal;
+
+        if ($request->jumlah > $saldoBerjalan) {
+            return back()->with('error', 'Nominal pengajuan pencairan melebihi saldo berjalan Anda saat ini (Rp ' . number_format($saldoBerjalan, 0, ',', '.') . ').');
+        }
+
+        PencairanKomisi::create([
+            'id_pemilik_mobil' => $id_mitra,
+            'jumlah' => $request->jumlah,
+            'status' => 'pending',
+            'nama_bank' => $request->nama_bank,
+            'nomor_rekening' => $request->nomor_rekening,
+            'nama_rekening' => $request->nama_rekening,
+            'catatan' => $request->catatan,
+        ]);
+
+        // Update bank info di profil pemilik_mobil mitra
+        \DB::table('pemilik_mobil')
+            ->where('id_user', $id_mitra)
+            ->update([
+                'nama_bank' => $request->nama_bank,
+                'nomor_rekening' => $request->nomor_rekening,
+            ]);
+
+        return back()->with('success', 'Pengajuan pencairan dana berhasil dikirim dan sedang menunggu persetujuan admin.');
     }
 }

@@ -6,22 +6,38 @@
 
 @section('content')
 
+    @if(session('success'))
+        <div class="alert alert-success rounded-3 mb-4 shadow-sm border-0 d-flex align-items-center">
+            <i class="bi bi-check-circle-fill fs-4 me-2"></i>
+            <div>{{ session('success') }}</div>
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger rounded-3 mb-4 shadow-sm border-0 d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill fs-4 me-2"></i>
+            <div>{{ session('error') }}</div>
+        </div>
+    @endif
+
     {{-- KARTU RINGKASAN SALDO & INDIKATOR TUNGGAKAN --}}
     <div class="row g-4 mb-5">
         <div class="col-md-4">
-            @if($tunggakanAdminGlobal > 0)
-                <div class="card border-0 shadow-sm rounded-4 h-100 text-white" style="background: linear-gradient(135deg, #dc3545 0%, #bd2130 100%);">
-            @else
-                <div class="card border-0 shadow-sm rounded-4 h-100 text-white" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);">
-            @endif
-                <div class="card-body p-4 d-flex align-items-center">
-                    <div class="bg-white bg-opacity-25 p-3 rounded-circle d-flex align-items-center justify-content-center me-4" style="width: 70px; height: 70px;">
-                        <i class="bi bi-exclamation-circle fs-1 text-white"></i>
+            <div class="card border-0 shadow-sm rounded-4 h-100 text-white" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);">
+                <div class="card-body p-4 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-white bg-opacity-25 p-3 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
+                            <i class="bi bi-wallet2 fs-2 text-white"></i>
+                        </div>
+                        <div>
+                            <p class="mb-1 text-white text-opacity-75 fw-medium text-uppercase letter-spacing-1 small">Saldo Berjalan</p>
+                            <h3 class="fw-bold mb-0">Rp {{ number_format($tunggakanAdminGlobal, 0, ',', '.') }}</h3>
+                        </div>
                     </div>
-                    <div>
-                        <p class="mb-1 text-white text-opacity-75 fw-medium text-uppercase letter-spacing-1 small">Tunggakan Belum Dibayar Admin</p>
-                        <h3 class="fw-bold mb-0">Rp {{ number_format($tunggakanAdminGlobal, 0, ',', '.') }}</h3>
-                    </div>
+                    @if($tunggakanAdminGlobal >= 10000)
+                        <button type="button" class="btn btn-light rounded-pill fw-bold btn-sm py-2 px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#ajukanPencairanModal">
+                            <i class="bi bi-arrow-up-right-circle me-1"></i> Cairkan
+                        </button>
+                    @endif
                 </div>
             </div>
         </div>
@@ -62,7 +78,7 @@
         </li>
         <li class="nav-item">
             <button class="nav-link fw-bold px-4 rounded-pill bg-white border text-secondary" id="pencairan-tab" data-bs-toggle="tab" data-bs-target="#pencairan-pane" type="button">
-                <i class="bi bi-clock-history me-1"></i> Riwayat Pencairan Dana
+                <i class="bi bi-clock-history me-1"></i> Riwayat & Status Pencairan
             </button>
         </li>
     </ul>
@@ -126,17 +142,18 @@
         <div class="tab-pane fade" id="pencairan-pane">
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-header bg-white border-bottom pt-4 pb-3 px-4 rounded-top-4">
-                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-receipt-cutoff text-secondary me-2"></i>Bukti Setoran Dana Transfer dari Admin</h5>
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-receipt-cutoff text-secondary me-2"></i>Daftar Pengajuan & Transfer Pencairan</h5>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead class="bg-light text-muted small text-uppercase">
                                 <tr>
-                                    <th class="ps-4 py-3 fw-semibold">Tanggal Terima</th>
-                                    <th class="py-3 fw-semibold">Jumlah Cair</th>
-                                    <th class="py-3 fw-semibold">Catatan Berita</th>
-                                    <th class="py-3 pe-4 fw-semibold text-end">Status & Berkas Bukti</th>
+                                    <th class="ps-4 py-3 fw-semibold">Tanggal Pengajuan</th>
+                                    <th class="py-3 fw-semibold">Nominal</th>
+                                    <th class="py-3 fw-semibold">Tujuan Transfer</th>
+                                    <th class="py-3 fw-semibold">Status</th>
+                                    <th class="py-3 pe-4 fw-semibold text-end">Aksi/Bukti</th>
                                 </tr>
                             </thead>
                             <tbody class="border-top">
@@ -144,18 +161,38 @@
                                 <tr>
                                     <td class="ps-4 py-3 text-muted small">{{ \Carbon\Carbon::parse($r->created_at)->format('d M Y, H:i') }} WIB</td>
                                     <td class="py-3 fw-bold text-dark">Rp {{ number_format($r->jumlah, 0, ',', '.') }}</td>
-                                    <td class="py-3 small text-muted fst-italic">"{{ $r->catatan ?? '-' }}"</td>
+                                    <td class="py-3 small text-dark">
+                                        @if($r->nama_bank)
+                                            <strong>{{ $r->nama_bank }}</strong><br>
+                                            <span class="text-muted">{{ $r->nomor_rekening }} a.n. {{ $r->nama_rekening }}</span>
+                                        @else
+                                            <span class="text-muted">Transfer Manual (Sistem Lama)</span>
+                                        @endif
+                                    </td>
+                                    <td class="py-3">
+                                        @if($r->status == 'pending')
+                                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning px-2 py-1 rounded-pill"><i class="bi bi-clock"></i> Pending</span>
+                                        @elseif($r->status == 'disetujui')
+                                            <span class="badge bg-success bg-opacity-10 text-success border border-success px-2 py-1 rounded-pill"><i class="bi bi-check-circle"></i> Disetujui</span>
+                                        @else
+                                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-2 py-1 rounded-pill"><i class="bi bi-x-circle"></i> Ditolak</span>
+                                        @endif
+                                    </td>
                                     <td class="pe-4 py-3 text-end">
-                                        <div class="d-flex flex-column align-items-end gap-1">
-                                            <span class="badge bg-success bg-opacity-10 text-success border border-success px-2 py-1 mb-1"><i class="bi bi-check-all"></i> Sudah Ditransfer</span>
-                                            <button type="button" class="btn btn-xs btn-outline-primary rounded-3 px-3 py-1" data-bs-toggle="modal" data-bs-target="#buktiModal{{ $r->id }}">
-                                                <i class="bi bi-image me-1"></i> Cek Bukti Transfer
+                                        @if($r->status == 'disetujui' && $r->bukti_transfer)
+                                            <button type="button" class="btn btn-sm btn-outline-primary rounded-3 px-3 py-1" data-bs-toggle="modal" data-bs-target="#buktiModal{{ $r->id }}">
+                                                <i class="bi bi-image me-1"></i> Cek Bukti
                                             </button>
-                                        </div>
+                                        @elseif($r->status == 'ditolak' && $r->catatan_admin)
+                                            <span class="text-danger small fst-italic" title="{{ $r->catatan_admin }}">Alasan: {{ $r->catatan_admin }}</span>
+                                        @else
+                                            <span class="text-muted small">-</span>
+                                        @endif
                                     </td>
                                 </tr>
 
                                 {{-- MODAL FILE TRANSFER --}}
+                                @if($r->bukti_transfer)
                                 <div class="modal fade" id="buktiModal{{ $r->id }}" tabindex="-1" aria-hidden="true">
                                     <div class="modal-dialog modal-dialog-centered">
                                         <div class="modal-content rounded-4 border-0 shadow">
@@ -173,8 +210,9 @@
                                         </div>
                                     </div>
                                 </div>
+                                @endif
                                 @empty
-                                <tr><td colspan="4" class="text-center py-5 text-muted">Belum ada catatan pengiriman dana dari admin.</td></tr>
+                                <tr><td colspan="5" class="text-center py-5 text-muted">Belum ada catatan pengajuan dana.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -184,6 +222,58 @@
         </div>
 
     </div>
+
+    {{-- MODAL AJUKAN PENCAIRAN --}}
+    @if($tunggakanAdminGlobal >= 10000)
+    <div class="modal fade text-start" id="ajukanPencairanModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <form action="{{ route('mitra.komisi.pencairan') }}" method="POST">
+                    @csrf
+                    <div class="modal-header border-bottom bg-light px-4 py-3">
+                        <h5 class="modal-title fw-bold text-dark"><i class="bi bi-cash-stack text-success me-2"></i>Ajukan Pencairan Dana</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark">Saldo Berjalan Saat Ini</label>
+                            <input type="text" class="form-control bg-light fw-bold text-dark" value="Rp {{ number_format($tunggakanAdminGlobal, 0, ',', '.') }}" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark">Nominal Pencairan (Min. Rp 10.000)</label>
+                            <div class="input-group">
+                                <span class="input-group-text fw-bold">Rp</span>
+                                <input type="number" name="jumlah" class="form-control" min="10000" max="{{ $tunggakanAdminGlobal }}" required placeholder="Contoh: 150000">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark">Bank Tujuan</label>
+                            <input type="text" name="nama_bank" class="form-control" value="{{ $mitraProfile->nama_bank ?? '' }}" required placeholder="Contoh: BCA / Mandiri / BRI">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold text-dark">Nomor Rekening</label>
+                                <input type="text" name="nomor_rekening" class="form-control" value="{{ $mitraProfile->nomor_rekening ?? '' }}" required placeholder="Contoh: 7012345678">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold text-dark">Nama Pemilik Rekening</label>
+                                <input type="text" name="nama_rekening" class="form-control" value="{{ Auth::user()->nama ?? '' }}" required placeholder="Contoh: Hendra Wijaya">
+                            </div>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label fw-bold text-dark">Catatan Tambahan (Opsional)</label>
+                            <textarea name="catatan" class="form-control" rows="2" placeholder="Tulis catatan atau keperluan jika ada..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light border-top p-3">
+                        <button type="button" class="btn btn-secondary rounded-3 px-4" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary rounded-3 px-4 fw-bold">Ajukan Sekarang</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <script>
         document.querySelectorAll('#keuanganTab button[data-bs-toggle="tab"]').forEach(btn => {

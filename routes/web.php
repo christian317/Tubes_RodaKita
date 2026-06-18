@@ -69,6 +69,7 @@ Route::middleware(['auth', 'role:1'])->group(function () {
     // transaksi
     Route::get('/admin/keuangan', [TransaksiController::class, 'index'])->name('admin.transaksi.index');
     Route::post('/admin/keuangan/transfer', [TransaksiController::class, 'transferDana'])->name('admin.transaksi.transfer');
+    Route::post('/admin/keuangan/pencairan/{id}/proses', [TransaksiController::class, 'prosesPencairan'])->name('admin.transaksi.proses_pencairan');
 
     // manajemen promo
     Route::get('/admin/promo', [PromoController::class, 'index'])->name('admin.promo.index');
@@ -105,6 +106,7 @@ Route::middleware(['auth', 'role:3'])->group(function () {
     Route::get('/mitra/monitoring-mobil', [MonitoringMobilController::class, 'index'])->name('mitra.monitoringMobil.index');
     Route::get('/mitra/komisi', [PendapatanKomisiController::class, 'index'])->name('mitra.komisi.index');
     Route::get('/mitra/komisi/mobil/{id}', [PendapatanKomisiController::class, 'detail'])->name('mitra.komisi.detail');
+    Route::post('/mitra/komisi/pencairan', [PendapatanKomisiController::class, 'ajukanPencairan'])->name('mitra.komisi.pencairan');
     Route::get('/mitra/ulasanPelanggan', [UlasanPelangganController::class, 'index'])->name('mitra.ulasanPelanggan.index');
     Route::get('/mitra/ulasanPelanggan/mobil/{id}', [UlasanPelangganController::class, 'detail'])->name('mitra.ulasanPelanggan.detail');
 });
