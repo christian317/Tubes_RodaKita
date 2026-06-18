@@ -29,29 +29,29 @@
                     </tr>
                 </thead>
                 <tbody class="border-top">
-                    @forelse(\ as \)
+                    @forelse($klaims as $klaim)
                         <tr>
                             <td class="ps-4 py-3">
-                                <div class="fw-bold text-dark small">{{ \->booking->mobil->brand->nama_brand ?? '' }} {{ \->booking->mobil->model ?? '' }}</div>
-                                <div class="text-muted small">#{{ \->id_booking }}</div>
+                                <div class="fw-bold text-dark small">{{ $klaim->booking->mobil->brand->nama_brand ?? '' }} {{ $klaim->booking->mobil->model ?? '' }}</div>
+                                <div class="text-muted small">#{{ $klaim->id_booking }}</div>
                             </td>
-                            <td class="py-3 text-dark small">{{ Str::limit(\->deskripsi_kerusakan, 60) }}</td>
-                            <td class="py-3 fw-bold text-dark">Rp {{ number_format(\->estimasi_biaya, 0, ',', '.') }}</td>
+                            <td class="py-3 text-dark small">{{ Str::limit($klaim->deskripsi_kerusakan, 60) }}</td>
+                            <td class="py-3 fw-bold text-dark">Rp {{ number_format($klaim->estimasi_biaya, 0, ',', '.') }}</td>
                             <td class="py-3">
-                                @if(\->status == 'diajukan')
+                                @if($klaim->status == 'diajukan')
                                     <span class="badge bg-warning bg-opacity-10 text-warning border border-warning px-3 py-2 rounded-pill">Diajukan</span>
-                                @elseif(\->status == 'ditinjau')
+                                @elseif($klaim->status == 'ditinjau')
                                     <span class="badge bg-info bg-opacity-10 text-info border border-info px-3 py-2 rounded-pill">Ditinjau</span>
-                                @elseif(\->status == 'disetujui')
+                                @elseif($klaim->status == 'disetujui')
                                     <span class="badge bg-success bg-opacity-10 text-success border border-success px-3 py-2 rounded-pill">Disetujui</span>
-                                @elseif(\->status == 'ditolak')
+                                @elseif($klaim->status == 'ditolak')
                                     <span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-3 py-2 rounded-pill">Ditolak</span>
                                 @else
                                     <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary px-3 py-2 rounded-pill">Selesai</span>
                                 @endif
                             </td>
                             <td class="pe-4 py-3 text-end">
-                                <a href="{{ route('mitra.klaim.detail', \->id) }}" class="btn btn-sm btn-outline-primary rounded-3">
+                                <a href="{{ route('mitra.klaim.detail', $klaim->id) }}" class="btn btn-sm btn-outline-primary rounded-3">
                                     <i class="bi bi-eye me-1"></i> Detail
                                 </a>
                             </td>

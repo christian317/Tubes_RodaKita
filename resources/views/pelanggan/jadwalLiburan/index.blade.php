@@ -78,7 +78,7 @@
                     <i class="bi bi-emoji-frown fs-1 text-muted opacity-25 d-block mb-3"></i>
                     <h5 class="fw-bold text-dark">Belum Ada Perjalanan Aktif</h5>
                     <p class="text-muted small mb-4">Anda belum memiliki pesanan sewa mobil yang disetujui atau sedang berjalan.</p>
-                    <a href="{{ route('pelanggan.pesanan') }}" class="btn btn-outline-primary rounded-pill px-4 fw-medium">Lihat Status Pesanan</a>
+                    <a href="{{ route('pelanggan.riwayatBooking.index') }}" class="btn btn-outline-primary rounded-pill px-4 fw-medium">Lihat Status Pesanan</a>
                 </div>
             @endforelse
 

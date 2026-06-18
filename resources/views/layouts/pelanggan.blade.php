@@ -20,6 +20,7 @@
             box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .1) !important;
         }
     </style>
+    @stack('styles')
 </head>
 
 <body class="bg-light text-dark" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
@@ -111,6 +112,7 @@
         </div>
     </footer>
 
+    @stack('scripts')
 </body>
 
 </html>

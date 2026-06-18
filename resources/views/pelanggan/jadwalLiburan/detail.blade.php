@@ -86,31 +86,31 @@
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-dark">Tanggal Kegiatan <span class="text-danger">*</span></label>
                                 {{-- Kunci inputan date sesuai dengan masa sewa --}}
-                                <input type="date" name="tanggal" class="form-control bg-light" required
+                                <input type="date" name="tanggal" class="form-control" required
                                        min="{{ \Carbon\Carbon::parse($booking->tanggal_mulai)->format('Y-m-d') }}" 
                                        max="{{ \Carbon\Carbon::parse($booking->tanggal_selesai)->format('Y-m-d') }}">
                             </div>
                             
                             <div class="col-6">
                                 <label class="form-label small fw-bold text-dark">Jam Mulai <span class="text-danger">*</span></label>
-                                <input type="time" name="jam_mulai" class="form-control bg-light" required>
+                                <input type="time" name="jam_mulai" class="form-control" required>
                             </div>
                             
                             <div class="col-6">
                                 <label class="form-label small fw-bold text-dark">Jam Selesai <span class="text-danger">*</span></label>
-                                <input type="time" name="jam_selesai" class="form-control bg-light" required>
+                                <input type="time" name="jam_selesai" class="form-control" required>
                             </div>
 
                             <div class="col-12 mt-3">
                                 <label class="form-label small fw-bold text-dark">Kegiatan / Aktivitas <span class="text-danger">*</span></label>
-                                <input type="text" name="kegiatan" class="form-control bg-light" placeholder="Cth: Berenang, Makan Siang, dll" required>
+                                <input type="text" name="kegiatan" class="form-control" placeholder="Cth: Berenang, Makan Siang, dll" required>
                             </div>
                             
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-dark">Nama Tempat / Lokasi (Opsional)</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span>
-                                    <input type="text" name="lokasi" class="form-control bg-light border-start-0" placeholder="Cth: Pantai Pandawa">
+                                    <input type="text" name="lokasi" class="form-control border-start-0" placeholder="Cth: Pantai Pandawa">
                                 </div>
                             </div>
                             

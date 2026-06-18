@@ -29,24 +29,24 @@
                     </tr>
                 </thead>
                 <tbody class="border-top">
-                    @forelse(\ as \)
+                    @forelse($klaims as $klaim)
                         <tr>
                             <td class="ps-4 py-3">
-                                <div class="fw-bold text-dark small">{{ \->pemilik->nama ?? '-' }}</div>
+                                <div class="fw-bold text-dark small">{{ $klaim->pemilik->nama ?? '-' }}</div>
                             </td>
                             <td class="py-3">
-                                <div class="small text-dark">{{ \->booking->mobil->brand->nama_brand ?? '' }} {{ \->booking->mobil->model ?? '' }}</div>
-                                <div class="text-muted small" style="font-size:0.75rem;">#{{ \->id_booking }}</div>
+                                <div class="small text-dark">{{ $klaim->booking->mobil->brand->nama_brand ?? '' }} {{ $klaim->booking->mobil->model ?? '' }}</div>
+                                <div class="text-muted small" style="font-size:0.75rem;">#{{ $klaim->id_booking }}</div>
                             </td>
-                            <td class="py-3 fw-bold text-dark">Rp {{ number_format(\->estimasi_biaya, 0, ',', '.') }}</td>
+                            <td class="py-3 fw-bold text-dark">Rp {{ number_format($klaim->estimasi_biaya, 0, ',', '.') }}</td>
                             <td class="py-3">
-                                @if(\->status == 'diajukan')
+                                @if($klaim->status == 'diajukan')
                                     <span class="badge bg-warning bg-opacity-10 text-warning border border-warning px-2 py-1 rounded-pill">Diajukan</span>
-                                @elseif(\->status == 'ditinjau')
+                                @elseif($klaim->status == 'ditinjau')
                                     <span class="badge bg-info bg-opacity-10 text-info border border-info px-2 py-1 rounded-pill">Ditinjau</span>
-                                @elseif(\->status == 'disetujui')
+                                @elseif($klaim->status == 'disetujui')
                                     <span class="badge bg-success bg-opacity-10 text-success border border-success px-2 py-1 rounded-pill">Disetujui</span>
-                                @elseif(\->status == 'ditolak')
+                                @elseif($klaim->status == 'ditolak')
                                     <span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-2 py-1 rounded-pill">Ditolak</span>
                                 @else
                                     <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary px-2 py-1 rounded-pill">Selesai</span>
@@ -54,14 +54,14 @@
                             </td>
                             <td class="pe-4 py-3 text-end">
                                 <button type="button" class="btn btn-sm btn-outline-primary rounded-3"
-                                        data-bs-toggle="modal" data-bs-target="#prosesKlaim{{ \->id }}">
+                                        data-bs-toggle="modal" data-bs-target="#prosesKlaim{{ $klaim->id }}">
                                     <i class="bi bi-pencil-square me-1"></i> Proses
                                 </button>
 
-                                <div class="modal fade" id="prosesKlaim{{ \->id }}" tabindex="-1">
+                                <div class="modal fade text-start" id="prosesKlaim{{ $klaim->id }}" tabindex="-1">
                                     <div class="modal-dialog modal-dialog-centered">
                                         <div class="modal-content rounded-4 border-0 shadow">
-                                            <form action="{{ route('admin.klaim.proses', \->id) }}" method="POST">
+                                            <form action="{{ route('admin.klaim.proses', $klaim->id) }}" method="POST">
                                                 @csrf
                                                 <div class="modal-header border-bottom px-4 py-3 bg-light rounded-top-4">
                                                     <h5 class="modal-title fw-bold">Proses Klaim</h5>
@@ -69,17 +69,17 @@
                                                 </div>
                                                 <div class="modal-body p-4">
                                                     <div class="mb-3">
-                                                        <strong>Mitra:</strong> {{ \->pemilik->nama ?? '-' }}<br>
-                                                        <strong>Mobil:</strong> {{ \->booking->mobil->brand->nama_brand ?? '' }} {{ \->booking->mobil->model ?? '' }}<br>
-                                                        <strong>Deskripsi:</strong> {{ \->deskripsi_kerusakan }}<br>
-                                                        <strong>Estimasi:</strong> Rp {{ number_format(\->estimasi_biaya, 0, ',', '.') }}
+                                                        <strong>Mitra:</strong> {{ $klaim->pemilik->nama ?? '-' }}<br>
+                                                        <strong>Mobil:</strong> {{ $klaim->booking->mobil->brand->nama_brand ?? '' }} {{ $klaim->booking->mobil->model ?? '' }}<br>
+                                                        <strong>Deskripsi:</strong> {{ $klaim->deskripsi_kerusakan }}<br>
+                                                        <strong>Estimasi:</strong> Rp {{ number_format($klaim->estimasi_biaya, 0, ',', '.') }}
                                                     </div>
-                                                    @if(\->foto_bukti && count(\->foto_bukti) > 0)
+                                                    @if($klaim->foto_bukti && count($klaim->foto_bukti) > 0)
                                                         <div class="mb-3">
                                                             <strong>Foto:</strong>
                                                             <div class="d-flex gap-2 mt-1">
-                                                                @foreach(\->foto_bukti as \)
-                                                                    <a href="{{ asset('storage/' . \) }}" target="_blank"><img src="{{ asset('storage/' . \) }}" style="height:60px;width:60px;object-fit:cover;" class="rounded border"></a>
+                                                                @foreach($klaim->foto_bukti as $foto)
+                                                                    <a href="{{ asset('storage/' . $foto) }}" target="_blank"><img src="{{ asset('storage/' . $foto) }}" style="height:60px;width:60px;object-fit:cover;" class="rounded border"></a>
                                                                 @endforeach
                                                             </div>
                                                         </div>
