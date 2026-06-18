@@ -20,6 +20,9 @@
 @endpush
 
 @section('content')
+    @php
+        $isVerified = Auth::user()->verifikasi && Auth::user()->verifikasi->status === 'verified';
+    @endphp
 
     <div class="container py-4 py-lg-5">
 
@@ -127,12 +130,21 @@
                                 <div class="mb-4">
                                     <label class="form-label small fw-bold text-dark mb-2">Pilih Tipe Layanan <span
                                             class="text-danger">*</span></label>
+                                    @if (!$isVerified)
+                                        <div class="alert alert-warning border-0 rounded-3 py-2 px-3 small mb-3 shadow-sm d-flex align-items-center">
+                                            <i class="bi bi-exclamation-circle-fill me-2 fs-5"></i>
+                                            <div>
+                                                Layanan <strong>Lepas Kunci</strong> dinonaktifkan karena akun Anda belum terverifikasi. 
+                                                Silakan ajukan verifikasi di menu <a href="{{ route('pelanggan.verifikasi.index') }}" class="alert-link fw-bold text-decoration-underline">Verifikasi Akun</a>.
+                                            </div>
+                                        </div>
+                                    @endif
                                     <div class="row g-3">
                                         <div class="col-6">
                                             <input type="radio" class="btn-check" name="tipe_layanan" id="lepasKunci"
-                                                value="lepas_kunci" autocomplete="off" checked onchange="hitungTotal()">
+                                                value="lepas_kunci" autocomplete="off" {{ $isVerified ? 'checked' : 'disabled' }} onchange="hitungTotal()">
                                             <label
-                                                class="btn btn-outline-primary w-100 text-start p-3 h-100 rounded-3 d-flex flex-column"
+                                                class="btn btn-outline-primary w-100 text-start p-3 h-100 rounded-3 d-flex flex-column {{ !$isVerified ? 'opacity-50' : '' }}"
                                                 for="lepasKunci">
                                                 <div class="d-flex align-items-center mb-1">
                                                     <i class="bi bi-key-fill fs-5 me-2"></i>
@@ -141,11 +153,14 @@
                                                 <small class="d-block mt-2 opacity-75"
                                                     style="font-size: 0.8rem; line-height: 1.4;">Bawa mobil sendiri tanpa
                                                     biaya tambahan.</small>
+                                                @if (!$isVerified)
+                                                    <span class="badge bg-danger mt-2 align-self-start" style="font-size: 0.7rem;">Butuh Verifikasi</span>
+                                                @endif
                                             </label>
                                         </div>
                                         <div class="col-6">
                                             <input type="radio" class="btn-check" name="tipe_layanan" id="denganSupir"
-                                                value="dengan_supir" autocomplete="off" onchange="hitungTotal()">
+                                                value="dengan_supir" autocomplete="off" {{ !$isVerified ? 'checked' : '' }} onchange="hitungTotal()">
                                             <label
                                                 class="btn btn-outline-primary w-100 text-start p-3 h-100 rounded-3 d-flex flex-column"
                                                 for="denganSupir">
@@ -161,14 +176,30 @@
                                     </div>
                                 </div>
 
-                                {{-- UPLOAD KTP (Akan disembunyikan via JS jika pilih Dengan Supir) --}}
-                                <div class="mb-4" id="formUploadKtp">
+
+
+                                {{-- INFO KTP TERVERIFIKASI --}}
+                                @if ($isVerified)
+                                    <div class="mb-4" id="formVerifiedKtp">
+                                        <label class="form-label small fw-bold text-dark mb-2">Verifikasi Identitas</label>
+                                        <div class="p-3 border border-success rounded-3 bg-success bg-opacity-10 text-success d-flex align-items-center gap-2">
+                                            <i class="bi bi-shield-fill-check fs-4"></i>
+                                            <div>
+                                                <div class="fw-bold small">Akun Anda Terverifikasi</div>
+                                                <small style="font-size: 0.75rem;">Anda tidak perlu mengupload KTP lagi untuk sewa lepas kunci.</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                {{-- UPLOAD KTP (Akan disembunyikan via JS jika pilih Dengan Supir atau jika Akun sudah terverifikasi) --}}
+                                <div class="mb-4" id="formUploadKtp" style="{{ $isVerified ? 'display: none;' : '' }}">
                                     <label class="form-label small fw-bold text-dark mb-2">Upload Foto KTP <span
                                             class="text-danger">*</span></label>
                                     <div class="p-3 border rounded-3 bg-light">
                                         <input class="form-control form-control-sm border-0 shadow-none bg-white mb-2"
                                             type="file" name="foto_ktp" id="inputKtp"
-                                            accept="image/png, image/jpeg, image/jpg" required>
+                                            accept="image/png, image/jpeg, image/jpg" {{ $isVerified ? 'disabled' : 'required' }}>
                                         <small class="text-muted d-block" style="font-size: 0.75rem;"><i
                                                 class="bi bi-info-circle me-1"></i>Dokumen ini diperlukan untuk verifikasi
                                             identitas layanan Lepas Kunci. Maks 2MB.</small>
@@ -227,6 +258,56 @@
                                 </p>
                             </div>
 
+                            {{-- COUNTDOWN TIMER --}}
+                            @if($booking->bayar_sebelum && $booking->status === 'menunggu_approval')
+                                <div id="countdown-banner" class="alert border-0 rounded-3 mb-4 py-3 px-3 d-flex align-items-center gap-3"
+                                    style="background: linear-gradient(135deg, #fff3cd, #ffe8a1); border-left: 4px solid #f59e0b !important;">
+                                    <div class="fs-3">⏳</div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-bold text-dark small mb-1">Selesaikan pembayaran sebelum batas waktu:</div>
+                                        <div id="countdown-timer" class="fw-bold fs-5 text-danger font-monospace">--:--</div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">Booking akan otomatis dibatalkan jika melewati batas waktu</div>
+                                    </div>
+                                </div>
+                                <script>
+                                    (function () {
+                                        const deadline = new Date("{{ $booking->bayar_sebelum->toIso8601String() }}");
+                                        const timerEl = document.getElementById('countdown-timer');
+                                        const bannerEl = document.getElementById('countdown-banner');
+
+                                        function updateCountdown() {
+                                            const now = new Date();
+                                            const diff = deadline - now;
+
+                                            if (diff <= 0) {
+                                                timerEl.textContent = '00:00';
+                                                bannerEl.style.background = 'linear-gradient(135deg, #fee2e2, #fca5a5)';
+                                                timerEl.classList.remove('text-danger');
+                                                timerEl.classList.add('text-dark');
+                                                clearInterval(interval);
+                                                // Redirect ke riwayat booking setelah 3 detik
+                                                setTimeout(() => {
+                                                    window.location.href = "{{ route('pelanggan.riwayatBooking.index') }}";
+                                                }, 3000);
+                                                return;
+                                            }
+
+                                            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                                            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                                            timerEl.textContent = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+
+                                            // Ubah warna jika kurang dari 5 menit
+                                            if (diff < 5 * 60 * 1000) {
+                                                bannerEl.style.background = 'linear-gradient(135deg, #fee2e2, #fca5a5)';
+                                            }
+                                        }
+
+                                        updateCountdown();
+                                        const interval = setInterval(updateCountdown, 1000);
+                                    })();
+                                </script>
+                            @endif
+
                             <div class="summary-box p-4 rounded-4 mb-4">
                                 <div class="d-flex justify-content-between mb-2">
                                     <span class="text-muted small">Layanan</span>
@@ -262,6 +343,7 @@
     </div>
 
     <script>
+        const isUserVerified = {{ $isVerified ? 'true' : 'false' }};
         let appliedPromo = null;
         let potonganHarga = 0;
 
@@ -310,23 +392,37 @@
 
             // Elemen Dinamis
             const rincianSupirDiv = document.getElementById('rincianSupir');
+            const formVerifiedKtp = document.getElementById('formVerifiedKtp');
             const formUploadKtp = document.getElementById('formUploadKtp');
             const inputKtp = document.getElementById('inputKtp');
             const teksTombol = document.getElementById('teksTombol');
 
             if (isLepasKunci) {
-                // Munculkan kotak upload dan wajibkan isiannya
-                formUploadKtp.style.display = 'block';
-                inputKtp.setAttribute('required', 'required');
-                inputKtp.removeAttribute('disabled');
+                if (isUserVerified) {
+                    if (formVerifiedKtp) formVerifiedKtp.style.display = 'block';
+                    formUploadKtp.style.display = 'none';
+                    if (inputKtp) {
+                        inputKtp.removeAttribute('required');
+                        inputKtp.setAttribute('disabled', 'true');
+                    }
+                } else {
+                    if (formVerifiedKtp) formVerifiedKtp.style.display = 'none';
+                    formUploadKtp.style.display = 'block';
+                    if (inputKtp) {
+                        inputKtp.setAttribute('required', 'required');
+                        inputKtp.removeAttribute('disabled');
+                    }
+                }
 
                 // PERBAIKAN: Ubah kembali teksnya karena tetap harus bayar
                 teksTombol.innerText = 'Lanjut Pembayaran (Midtrans)'; 
             } else if (pakaiSupir) {
-                // Sembunyikan kotak upload dan matikan inputnya
+                if (formVerifiedKtp) formVerifiedKtp.style.display = 'none';
                 formUploadKtp.style.display = 'none';
-                inputKtp.removeAttribute('required');
-                inputKtp.setAttribute('disabled', 'true');
+                if (inputKtp) {
+                    inputKtp.removeAttribute('required');
+                    inputKtp.setAttribute('disabled', 'true');
+                }
 
                 teksTombol.innerText = 'Lanjut Pembayaran (Midtrans)';
             }

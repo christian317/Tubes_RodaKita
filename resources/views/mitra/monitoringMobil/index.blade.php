@@ -147,12 +147,12 @@
                                     <button type="button"
                                         class="btn btn-sm btn-outline-primary fw-bold rounded-3 px-3 shadow-sm"
                                         data-bs-toggle="modal" data-bs-target="#jadwalModal{{ $m->id }}">
+                                        <i class="bi bi-calendar-week me-1"></i> Cek Jadwal
+                                    </button>
                                     <button type="button"
                                         class="btn btn-sm btn-danger fw-bold rounded-3 px-3 shadow-sm ms-1"
                                         data-bs-toggle="modal" data-bs-target="#klaimModal{{ $m->id }}">
                                         <i class="bi bi-shield-exclamation me-1"></i> Ajukan Klaim
-                                    </button>
-                                        <i class="bi bi-calendar-week me-1"></i> Cek Jadwal
                                     </button>
                                 </td>
                             </tr>

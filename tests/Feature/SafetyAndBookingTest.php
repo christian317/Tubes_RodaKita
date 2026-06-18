@@ -460,4 +460,294 @@ class SafetyAndBookingTest extends TestCase
             'alamat_jemput' => 'Bandung, Jawa Barat',
         ]);
     }
+
+    /**
+     * Test Midtrans callback handles test notification successfully
+     */
+    public function test_midtrans_callback_handles_test_notification(): void
+    {
+        $response = $this->postJson('/midtrans/callback', [
+            'order_id' => 'payment_notif_test_M752499532_9c650643-3047-4af2-827b-fffce439f024',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'message' => 'Test notification received successfully. Connection is OK!'
+        ]);
+    }
+
+    /**
+     * Test Midtrans callback local fallback works with simulated webhook
+     */
+    public function test_midtrans_callback_local_fallback_works(): void
+    {
+        $pelangganId = DB::table('user')->insertGetId([
+            'id_role' => 2,
+            'nama' => 'Test Callback Pelanggan',
+            'email' => 'testcb@example.com',
+            'password' => Hash::make('password123'),
+            'alamat' => 'Jl. Callback',
+            'no_telepon' => '081234567809',
+        ]);
+
+        $mobilId = $this->createCar('Terios', 'B 7777 ABC');
+
+        $bookingId = DB::table('booking')->insertGetId([
+            'id_user' => $pelangganId,
+            'id_mobil' => $mobilId,
+            'tanggal_mulai' => now()->addDays(1)->format('Y-m-d 09:00:00'),
+            'tanggal_selesai' => now()->addDays(3)->format('Y-m-d 18:00:00'),
+            'waktu_mulai' => '09:00',
+            'waktu_selesai' => '18:00',
+            'status' => 'menunggu_approval',
+            'tipe_layanan' => 'lepas_kunci',
+        ]);
+
+        $pembayaranId = DB::table('pembayaran')->insertGetId([
+            'id_booking' => $bookingId,
+            'total_pembayaran' => 600000.00,
+            'potongan_harga' => 0.00,
+            'status_pembayaran' => 'belum_dibayar',
+            'komisi_pemilik' => 420000.00,
+        ]);
+
+        // POST simulated webhook payload
+        $response = $this->postJson('/midtrans/callback', [
+            'transaction_status' => 'settlement',
+            'order_id' => 'ORDER-' . $pembayaranId . '-' . time(),
+            'fraud_status' => 'accept',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'message' => 'Callback berhasil diproses aplikasi Roda Kita'
+        ]);
+
+        // Check if database was updated successfully
+        $this->assertDatabaseHas('pembayaran', [
+            'id' => $pembayaranId,
+            'status_pembayaran' => 'dibayar',
+        ]);
+
+        $this->assertDatabaseHas('booking', [
+            'id' => $bookingId,
+            'status' => 'dibayar',
+        ]);
+    }
+
+    /**
+     * Test verified user can checkout lepas_kunci without uploading KTP again
+     */
+    public function test_verified_pelanggan_can_checkout_without_uploading_ktp(): void
+    {
+        $pelangganId = DB::table('user')->insertGetId([
+            'id_role' => 2,
+            'nama' => 'Verified Customer No Ktp',
+            'email' => 'noktp@example.com',
+            'password' => Hash::make('password123'),
+            'alamat' => 'Jl. No KTP',
+            'no_telepon' => '081234567811',
+        ]);
+
+        $pelanggan = User::find($pelangganId);
+        $this->actingAs($pelanggan);
+
+        // Mark user verified and set a dummy verified KTP path
+        DB::table('verifikasi_akun')->insert([
+            'id_user' => $pelangganId,
+            'foto_ktp' => 'ktp_pelanggan/dummy_ktp.jpg',
+            'foto_sim' => 'sim_pelanggan/dummy_sim.jpg',
+            'foto_selfie' => 'selfie_pelanggan/dummy_selfie.jpg',
+            'status' => 'verified',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $mobilId = $this->createCar('Avanza', 'B 1234 ABC');
+
+        // Post checkout WITHOUT passing 'foto_ktp'
+        $response = $this->post(route('pelanggan.order.checkout.proses'), [
+            'id_mobil' => $mobilId,
+            'waktu_mulai' => '09:00',
+            'waktu_selesai' => '18:00',
+            'tanggal_mulai' => now()->addDays(1)->format('Y-m-d'),
+            'tanggal_selesai' => now()->addDays(3)->format('Y-m-d'),
+            'tipe_layanan' => 'lepas_kunci',
+        ]);
+
+        $response->assertStatus(200); // Renders checkout view with Midtrans token
+        
+        // Assert the booking uses the existing KTP path from the verification record
+        $this->assertDatabaseHas('booking', [
+            'id_mobil' => $mobilId,
+            'id_user' => $pelangganId,
+            'foto_ktp' => 'ktp_pelanggan/dummy_ktp.jpg',
+        ]);
+    }
+
+    public function test_mitra_can_submit_withdrawal_request(): void
+    {
+        $mitra = User::find($this->mitraId);
+        $this->actingAs($mitra);
+
+        $pelangganId = DB::table('user')->insertGetId([
+            'id_role' => 2,
+            'nama' => 'John Doe',
+            'email' => 'john.withdrawal@example.com',
+            'password' => Hash::make('password123'),
+            'alamat' => 'Jl. Jalan 1',
+            'no_telepon' => '081234567891',
+        ]);
+
+        // Setup a car and a booking with pembayaran completed to generate saldo/balance
+        $mobilId = $this->createCar('Avanza Test', 'B 8888 COM');
+        $bookingId = DB::table('booking')->insertGetId([
+            'id_user' => $pelangganId,
+            'id_mobil' => $mobilId,
+            'tanggal_mulai' => now()->format('Y-m-d 09:00:00'),
+            'tanggal_selesai' => now()->addDays(1)->format('Y-m-d 18:00:00'),
+            'waktu_mulai' => '09:00',
+            'waktu_selesai' => '18:00',
+            'status' => 'selesai',
+            'tipe_layanan' => 'lepas_kunci',
+        ]);
+
+        DB::table('pembayaran')->insert([
+            'id_booking' => $bookingId,
+            'total_pembayaran' => 300000.00,
+            'potongan_harga' => 0.00,
+            'status_pembayaran' => 'selesai',
+            'komisi_pemilik' => 210000.00, // 70% of 300k
+        ]);
+
+        // Request withdrawal
+        $response = $this->post(route('mitra.komisi.pencairan'), [
+            'jumlah' => 50000,
+            'nama_bank' => 'BCA',
+            'nomor_rekening' => '1234567890',
+            'nama_rekening' => 'Hendra Test',
+            'catatan' => 'Butuh dana cepat',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('pencairan_komisi', [
+            'id_pemilik_mobil' => $this->mitraId,
+            'jumlah' => 50000.00,
+            'status' => 'pending',
+            'nama_bank' => 'BCA',
+            'nomor_rekening' => '1234567890',
+            'nama_rekening' => 'Hendra Test',
+        ]);
+    }
+
+    public function test_mitra_cannot_withdraw_exceeding_balance(): void
+    {
+        $mitra = User::find($this->mitraId);
+        $this->actingAs($mitra);
+
+        // Request withdrawal exceeding balance (which is 0 right now)
+        $response = $this->post(route('mitra.komisi.pencairan'), [
+            'jumlah' => 50000,
+            'nama_bank' => 'BCA',
+            'nomor_rekening' => '1234567890',
+            'nama_rekening' => 'Hendra Test',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+    }
+
+    public function test_admin_can_approve_withdrawal_request(): void
+    {
+        $admin = User::find($this->adminId);
+        $this->actingAs($admin);
+
+        $pencairanId = DB::table('pencairan_komisi')->insertGetId([
+            'id_pemilik_mobil' => $this->mitraId,
+            'jumlah' => 25000.00,
+            'status' => 'pending',
+            'nama_bank' => 'BCA',
+            'nomor_rekening' => '1234567890',
+            'nama_rekening' => 'Hendra Test',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->post(route('admin.transaksi.proses_pencairan', $pencairanId), [
+            'aksi' => 'setujui',
+            'bukti_transfer' => UploadedFile::fake()->image('receipt.jpg'),
+            'catatan_admin' => 'Sudah ditransfer ya',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('pencairan_komisi', [
+            'id' => $pencairanId,
+            'status' => 'disetujui',
+            'catatan_admin' => 'Sudah ditransfer ya',
+        ]);
+    }
+
+    public function test_admin_can_reject_withdrawal_request(): void
+    {
+        $admin = User::find($this->adminId);
+        $this->actingAs($admin);
+
+        $pencairanId = DB::table('pencairan_komisi')->insertGetId([
+            'id_pemilik_mobil' => $this->mitraId,
+            'jumlah' => 25000.00,
+            'status' => 'pending',
+            'nama_bank' => 'BCA',
+            'nomor_rekening' => '1234567890',
+            'nama_rekening' => 'Hendra Test',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->post(route('admin.transaksi.proses_pencairan', $pencairanId), [
+            'aksi' => 'tolak',
+            'catatan_admin' => 'Rekening tidak terdaftar',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('pencairan_komisi', [
+            'id' => $pencairanId,
+            'status' => 'ditolak',
+            'catatan_admin' => 'Rekening tidak terdaftar',
+        ]);
+    }
+    public function test_unverified_user_cannot_checkout_with_lepas_kunci(): void
+    {
+        $pelangganId = DB::table('user')->insertGetId([
+            'id_role' => 2,
+            'nama' => 'Unverified Pelanggan',
+            'email' => 'unverified@example.com',
+            'password' => Hash::make('password123'),
+            'alamat' => 'Jl. Jalan 3',
+            'no_telepon' => '081234567895',
+        ]);
+
+        $pelanggan = User::find($pelangganId);
+        $this->actingAs($pelanggan);
+
+        $mobilId = $this->createCar('Xenia Test', 'B 7777 XX');
+
+        $response = $this->post(route('pelanggan.order.checkout.proses'), [
+            'id_mobil' => $mobilId,
+            'waktu_mulai' => '09:00',
+            'waktu_selesai' => '18:00',
+            'tanggal_mulai' => now()->addDays(1)->format('Y-m-d'),
+            'tanggal_selesai' => now()->addDays(3)->format('Y-m-d'),
+            'tipe_layanan' => 'lepas_kunci',
+            'foto_ktp' => UploadedFile::fake()->image('ktp.jpg'),
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+    }
 }

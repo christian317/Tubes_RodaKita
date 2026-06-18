@@ -31,6 +31,18 @@ class PelangganController extends Controller
     {
         return ! Booking::where('id_mobil', $id_mobil)
             ->whereIn('status', ['menunggu_approval', 'menunggu', 'dibayar', 'disewakan'])
+            ->where(function ($query) {
+                // Booking pending yang sudah lewat batas bayar dianggap tidak aktif
+                $query->where(function ($q) {
+                    $q->whereIn('status', ['dibayar', 'disewakan']);
+                })->orWhere(function ($q) {
+                    $q->whereIn('status', ['menunggu_approval', 'menunggu'])
+                        ->where(function ($inner) {
+                            $inner->whereNull('bayar_sebelum')
+                                ->orWhere('bayar_sebelum', '>', Carbon::now());
+                        });
+                });
+            })
             ->where(function ($query) use ($tanggal_mulai, $tanggal_selesai) {
                 $query->where(function ($q) use ($tanggal_mulai, $tanggal_selesai) {
                     $q->whereDate('tanggal_mulai', '<=', $tanggal_selesai)
@@ -49,6 +61,18 @@ class PelangganController extends Controller
 
         $bookedDates = Booking::where('id_mobil', $mobil->id)
             ->whereIn('status', ['menunggu_approval', 'menunggu', 'dibayar', 'disewakan'])
+            ->where(function ($query) {
+                // Hanya booking aktif (bukan yang sudah expired batas bayarnya)
+                $query->where(function ($q) {
+                    $q->whereIn('status', ['dibayar', 'disewakan']);
+                })->orWhere(function ($q) {
+                    $q->whereIn('status', ['menunggu_approval', 'menunggu'])
+                        ->where(function ($inner) {
+                            $inner->whereNull('bayar_sebelum')
+                                ->orWhere('bayar_sebelum', '>', Carbon::now());
+                        });
+                });
+            })
             ->where('tanggal_selesai', '>=', Carbon::now()->format('Y-m-d 00:00:00'))
             ->get(['tanggal_mulai', 'tanggal_selesai']);
 
@@ -82,17 +106,30 @@ class PelangganController extends Controller
 
     public function prosesCheckout(Request $request)
     {
+        $isVerified = Auth::user()->verifikasi && Auth::user()->verifikasi->status === 'verified';
+
         // VALIDASI INPUT
-        $request->validate([
+        $rules = [
             'id_mobil' => 'required',
             'waktu_mulai' => 'required',
             'waktu_selesai' => 'required',
             'tanggal_mulai' => 'required|date|after_or_equal:today',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
             'tipe_layanan' => 'required|in:lepas_kunci,dengan_supir',
-            'foto_ktp' => 'required_if:tipe_layanan,lepas_kunci|image|mimes:jpeg,png,jpg|max:2048',
             'applied_id_promo' => 'nullable|exists:promo,id',
-        ]);
+        ];
+
+        if (! $isVerified) {
+            $rules['foto_ktp'] = 'required_if:tipe_layanan,lepas_kunci|image|mimes:jpeg,png,jpg|max:2048';
+        } else {
+            $rules['foto_ktp'] = 'nullable|image|mimes:jpeg,png,jpg|max:2048';
+        }
+
+        $request->validate($rules);
+
+        if ($request->tipe_layanan === 'lepas_kunci' && ! $isVerified) {
+            return back()->with('error', 'Layanan lepas kunci hanya tersedia untuk akun yang sudah terverifikasi. Silakan ajukan verifikasi terlebih dahulu.')->withInput();
+        }
 
         $mobil = Mobil::findOrFail($request->id_mobil);
 
@@ -113,10 +150,12 @@ class PelangganController extends Controller
         $biaya_supir = ($request->tipe_layanan == 'dengan_supir') ? (150000 * $jumlah_hari) : 0;
         $total_bayar = $biaya_sewa_mobil + $biaya_supir;
 
-        // PROSES UPLOAD FOTO KTP JIKA ADA
+        // PROSES UPLOAD FOTO KTP JIKA ADA ATAU JIKA AKUN SUDAH TERVERIFIKASI
         $pathKtp = null;
         if ($request->hasFile('foto_ktp')) {
             $pathKtp = $request->file('foto_ktp')->store('ktp_pelanggan', 'public');
+        } elseif ($isVerified && $request->tipe_layanan === 'lepas_kunci') {
+            $pathKtp = Auth::user()->verifikasi->foto_ktp;
         }
 
         $status_booking = 'menunggu_approval';
@@ -172,6 +211,7 @@ class PelangganController extends Controller
                 'waktu_mulai' => $request->waktu_mulai,
                 'waktu_selesai' => $request->waktu_selesai,
                 'status' => $status_booking,
+                'bayar_sebelum' => Carbon::now()->addMinutes(30),
             ]);
 
             $transaksi = Pembayaran::create([
@@ -220,15 +260,33 @@ class PelangganController extends Controller
         Config::$serverKey = env('MIDTRANS_SERVER_KEY');
         Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
 
-        try {
-            $notif = new Notification;
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Notification error: '.$e->getMessage()], 400);
+        // Jika ini adalah test notification dari dashboard Midtrans, kembalikan respon 200 OK langsung
+        $order_id_raw = $request->input('order_id');
+        if ($order_id_raw && str_starts_with($order_id_raw, 'payment_notif_test')) {
+            return response()->json([
+                'message' => 'Test notification received successfully. Connection is OK!'
+            ], 200);
         }
 
-        $transaction = $notif->transaction_status;
-        $order_id = $notif->order_id;
-        $fraud = $notif->fraud_status;
+        $transaction = null;
+        $order_id = null;
+        $fraud = null;
+
+        try {
+            $notif = new Notification;
+            $transaction = $notif->transaction_status;
+            $order_id = $notif->order_id;
+            $fraud = $notif->fraud_status;
+        } catch (\Exception $e) {
+            // Fallback untuk local/testing environment agar manual simulation (Method B) tetap bisa jalan
+            if (app()->environment('local', 'testing')) {
+                $transaction = $request->input('transaction_status');
+                $order_id = $request->input('order_id');
+                $fraud = $request->input('fraud_status');
+            } else {
+                return response()->json(['message' => 'Notification error: '.$e->getMessage()], 400);
+            }
+        }
 
         // Memecah order_id dari format: ORDER-{id_pembayaran}-{timestamp}
         $parts = explode('-', $order_id);

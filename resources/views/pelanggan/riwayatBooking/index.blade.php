@@ -193,6 +193,29 @@
                                 <div class="d-flex justify-content-between mb-2 small"><span class="text-muted">Plat Nomor</span><span class="fw-medium text-dark">{{ $b->mobil->plat_nomer ?? '-' }}</span></div>
                                 <div class="d-flex justify-content-between mb-2 small"><span class="text-muted">Tipe Layanan</span><span class="fw-medium text-primary">{{ str_replace('_', ' ', strtoupper($b->tipe_layanan)) }}</span></div>
                                 
+                                @if($b->mobil->alamat_jemput)
+                                    <div class="d-flex justify-content-between mb-2 small">
+                                        <span class="text-muted">Lokasi Pengambilan</span>
+                                        <span class="fw-medium text-dark text-end" style="max-width: 250px;">{{ $b->mobil->alamat_jemput }}</span>
+                                    </div>
+                                    @if($b->tipe_layanan === 'lepas_kunci')
+                                        <div class="d-flex justify-content-between mb-2 small">
+                                            <span class="text-muted">Lokasi Pengembalian</span>
+                                            <span class="fw-medium text-dark text-end" style="max-width: 250px;">{{ $b->mobil->alamat_jemput }} <small class="text-muted d-block">(Sama seperti pengambilan)</small></span>
+                                        </div>
+                                    @endif
+                                    @if($b->mobil->latitude && $b->mobil->longitude)
+                                        <div class="d-flex justify-content-between mb-2 small">
+                                            <span class="text-muted">Petunjuk Peta</span>
+                                            <span class="fw-medium">
+                                                <a href="https://www.google.com/maps/search/?api=1&query={{ $b->mobil->latitude }},{{ $b->mobil->longitude }}" target="_blank" class="text-primary text-decoration-none fw-bold">
+                                                    <i class="bi bi-geo-alt-fill text-danger me-1"></i> Buka Google Maps
+                                                </a>
+                                            </span>
+                                        </div>
+                                    @endif
+                                @endif
+
                                 <hr class="text-muted opacity-25">
                                 
                                 <h6 class="fw-bold mb-3 text-dark mt-3">Waktu Sewa</h6>

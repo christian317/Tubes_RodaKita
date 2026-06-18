@@ -18,6 +18,13 @@ class Booking extends Model
         'status',
         'tipe_layanan',
         'foto_ktp',
+        'bayar_sebelum',
+    ];
+
+    protected $casts = [
+        'tanggal_mulai'  => 'datetime',
+        'tanggal_selesai' => 'datetime',
+        'bayar_sebelum'  => 'datetime',
     ];
 
     public $timestamps = false;
