@@ -1,7 +1,7 @@
 # SETUP.md - RodaKita Project Setup Guide (from scratch)
 
 > How to get this project running from zero on Windows.
-> Covers PHP 8.5 via winget, MySQL, the full schema, and the new Trust & Safety features (Verifikasi Akun + Klaim Asuransi).
+> Covers PHP 8.5 via winget, MySQL, the full schema, and the new Trust & Safety features (Verifikasi Akun + Klaim Asuransi + Auto-Cancel Booking + Pencairan Dana Mitra).
 
 ---
 
@@ -176,6 +176,59 @@ Pelanggan (role 2) and Mitra (role 3) users can be created by Admin at `/admin/u
 1. **Admin Car Creation/Edit**: Admin can place a marker on an interactive Leaflet map to set `latitude` and `longitude` coordinates for a car, along with an `alamat_jemput` address text field.
 2. **Customer Car Detail**: Displays the pickup location map pin on the car details page `/pelanggan/mobil/{id}`.
 
+### Auto-Cancel Booking (Batas Waktu Pembayaran 30 Menit)
+
+Booking yang tidak dibayar dalam **30 menit** akan otomatis dibatalkan oleh sistem, membebaskan slot tanggal agar tidak menghalangi mitra.
+
+1. Saat pelanggan membuat booking, kolom `bayar_sebelum` diisi dengan `now() + 30 menit`.
+2. Countdown timer muncul di halaman checkout (Fase Pembayaran), menampilkan sisa waktu secara real-time.
+3. Timer berubah merah saat sisa waktu < 5 menit dan otomatis redirect ke Riwayat Booking saat habis.
+4. Scheduler Laravel menjalankan `booking:cancel-expired` setiap menit untuk membatalkan booking yang melewati `bayar_sebelum`.
+5. Kuota promo yang sudah dipakai akan dikembalikan otomatis jika booking dibatalkan.
+
+> [!IMPORTANT]
+> Fitur ini membutuhkan **Laravel Scheduler aktif**. Lihat bagian **Menjalankan Scheduler** di bawah.
+
+### Pencairan Dana / Penarikan Komisi Mitra (Withdrawal)
+
+Mitra dapat mengajukan pencairan dana komisi secara mandiri tanpa harus menghubungi admin.
+
+1. Mitra login → buka menu **Pencairan Dana** di sidebar.
+2. Isi formulir penarikan: jumlah, nama bank, nomor rekening, nama pemilik rekening.
+3. Pengajuan masuk ke Admin dengan status `pending`.
+4. Admin meninjau di `/admin/pencairan` → Setujui (opsional: unggah bukti transfer) atau Tolak dengan catatan.
+5. Mitra melihat riwayat dan status pengajuan secara real-time.
+
+---
+
+## Menjalankan Scheduler (Auto-Cancel Booking)
+
+Scheduler Laravel diperlukan agar fitur **auto-cancel booking kedaluwarsa** berjalan otomatis.
+
+### Development (Lokal)
+
+Jalankan scheduler di terminal terpisah (berjalan terus selama development):
+
+```powershell
+php artisan schedule:work
+```
+
+Atau jalankan command secara manual untuk menguji:
+
+```powershell
+php artisan booking:cancel-expired
+```
+
+### Production (Linux Server)
+
+Tambahkan satu baris ke crontab server (`crontab -e`):
+
+```bash
+* * * * * cd /path/to/Tubes_RodaKita && php artisan schedule:run >> /dev/null 2>&1
+```
+
+Ini membuat scheduler berjalan setiap menit. Laravel kemudian menentukan sendiri command mana yang perlu dieksekusi berdasarkan jadwal yang didefinisikan di `routes/console.php`.
+
 ---
 
 ## New Routes Added
@@ -200,6 +253,11 @@ Pelanggan (role 2) and Mitra (role 3) users can be created by Admin at `/admin/u
 | PUT    | `/admin/promo/{id}` | Update an existing promo code |
 | DELETE | `/admin/promo/{id}` | Delete a promo code |
 | POST   | `/pelanggan/promo/check` | Asynchronously check promo code validity and calculate discount |
+| GET    | `/mitra/pencairan` | Mitra withdrawal request form & history |
+| POST   | `/mitra/pencairan/store` | Submit withdrawal request |
+| GET    | `/admin/pencairan` | Admin withdrawal management |
+| POST   | `/admin/pencairan/{id}/approve` | Approve withdrawal (with transfer proof upload) |
+| POST   | `/admin/pencairan/{id}/reject` | Reject withdrawal with reason |
 
 ---
 
@@ -210,10 +268,12 @@ Pelanggan (role 2) and Mitra (role 3) users can be created by Admin at `/admin/u
 | `VerifikasiAkun` | `verifikasi_akun` | Yes (default) | `belongsTo(User)` via `id_user` |
 | `KlaimAsuransi` | `klaim_asuransi` | Yes (default) | `belongsTo(Booking)`, `belongsTo(User)` |
 | `Promo` | `promo` | Yes (default) | `hasMany(Pembayaran)` |
+| `PencairanDana` | `pencairan_dana` | Yes (default) | `belongsTo(User)` via `id_mitra` |
 
 `User` model also gained: `hasOne(VerifikasiAkun::class)`.
 `Pembayaran` model also gained: `belongsTo(Promo::class)`.
 `Mobil` model also gained: `latitude`, `longitude`, `alamat_jemput` columns.
+`Booking` model also gained: `bayar_sebelum` (datetime) column — payment deadline for auto-cancel.
 
 ## Running Automated Tests
 
@@ -300,9 +360,11 @@ If you just want to test dashboard flows, you can bypass the checkout step and m
 ## Commands Reference
 
 ```powershell
-composer run dev        # php artisan serve + queue:listen + pail + npm run dev
-composer run test       # php artisan test (SQLite in-memory)
-./vendor/bin/pint       # Laravel Pint code style fixer
+composer run dev                     # php artisan serve + queue:listen + pail + npm run dev
+composer run test                    # php artisan test (SQLite in-memory)
+./vendor/bin/pint                    # Laravel Pint code style fixer
+php artisan booking:cancel-expired  # Manually cancel expired bookings (no payment within 30 min)
+php artisan schedule:work           # Run scheduler locally (keeps running in foreground)
 ```
 
 ---
@@ -317,4 +379,6 @@ composer run test       # php artisan test (SQLite in-memory)
 | `storage` link missing | Run `php artisan storage:link` |
 | Midtrans payment fails | Set `MIDTRANS_SERVER_KEY` in `.env` (sandbox key from Midtrans dashboard) |
 | `'vite'` not recognized | Run `npm install` again |
+| Auto-cancel tidak berjalan | Pastikan `php artisan schedule:work` aktif di terminal terpisah (lokal) atau crontab sudah dikonfigurasi (production) |
+| `bayar_sebelum` column not found | Run `php artisan migrate` untuk menambahkan kolom baru ke tabel `booking` |
 

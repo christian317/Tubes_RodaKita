@@ -1,6 +1,6 @@
 # Panduan Pengujian Manual (Step-by-Step Manual Testing Guide)
 
-Dokumen ini berisi panduan langkah demi langkah untuk menguji fitur **Sistem Promo & Kode Voucher** dan **Integrasi Peta LeafletJS** secara manual di RodaKita.
+Dokumen ini berisi panduan langkah demi langkah untuk menguji fitur **Sistem Promo & Kode Voucher**, **Integrasi Peta LeafletJS**, **Auto-Cancel Booking**, dan **Pencairan Dana Mitra** secara manual di RodaKita.
 
 ---
 
@@ -19,6 +19,13 @@ Pastikan server lokal Anda dan database sudah berjalan dengan PHP 8.5 dan dummy 
    ```powershell
    composer run dev
    # Server Laravel akan berjalan di http://localhost:8000
+   ```
+
+3. **Jalankan Scheduler** (wajib untuk fitur Auto-Cancel Booking):
+   ```powershell
+   # Buka terminal BARU (terpisah dari server), lalu jalankan:
+   php artisan schedule:work
+   # Biarkan terminal ini tetap berjalan selama pengujian
    ```
 
 3. **Akun Pengujian (Test Accounts)**:
@@ -77,10 +84,15 @@ Gunakan akun **Admin** (`admin@gmail.com`) untuk menguji skenario operasional be
 2. Tinjau klaim asuransi yang diajukan oleh Mitra (e.g. laporan kerusakan bumper belakang).
 3. Klik **Proses Klaim**. Anda bisa memilih **Setujui** dengan memasukkan nominal *Biaya yang Disetujui* (e.g. Rp 500.000) atau memilih **Tolak** dengan menuliskan alasan penolakan.
 
-### Skenario 1.5: Keuangan & Transfer Komisi Mitra
-1. Masuk ke menu **Lainnya** -> **Transaksi**.
-2. Lihat daftar dana sewa bersih yang masuk. Pastikan ada tombol **Transfer Dana** di baris transaksi yang statusnya sudah selesai (`selesai`).
-3. Klik **Transfer Dana** untuk mengirimkan 70% bagian komisi ke rekening Mitra secara simulasi.
+### Skenario 1.5: Keuangan & Manajemen Pencairan Dana Mitra
+1. Masuk ke menu **Lainnya** → **Pencairan Dana**.
+2. Lihat daftar pengajuan penarikan komisi dari para Mitra. Akan terlihat satu pengajuan dari `mitra@gmail.com` dengan status `pending`.
+3. Klik tombol **Setujui** pada pengajuan tersebut:
+   - Isi nominal yang akan ditransfer.
+   - Opsional: unggah foto/screenshot bukti transfer.
+   - Klik **Konfirmasi Persetujuan**. Status pengajuan berubah menjadi `disetujui`.
+4. Kembali ke daftar, cari pengajuan lain dan coba klik **Tolak**. Isi alasan penolakan, klik **Konfirmasi Penolakan**. Status berubah menjadi `ditolak`.
+5. **Verifikasi**: Mitra yang bersangkutan harus dapat melihat perubahan status dan catatan dari Admin di menu **Pencairan Dana** mereka.
 
 ---
 
@@ -114,7 +126,25 @@ Cobalah skenario error berikut saat checkout:
 - **Kode Promo Kadaluarsa**: Masukkan `DISKONKADALUARSA` -> Harus muncul *"Kode promo sudah kadaluarsa."*
 - **Minimal Transaksi Belum Terpenuhi**: Gunakan kode promo yang memiliki batas minimal transaksi lebih tinggi dari subtotal sewa mobil -> Harus muncul pesan total sewa tidak memenuhi minimal transaksi.
 
-### Skenario 2.5: Menambahkan Rating & Ulasan (Shopee-Style)
+### Skenario 2.5: Auto-Cancel Booking — Countdown & Pembatalan Otomatis
+
+> [!IMPORTANT]
+> Pastikan `php artisan schedule:work` sudah berjalan di terminal terpisah sebelum memulai skenario ini.
+
+1. Login sebagai **Pelanggan Terverifikasi** (`pelanggan@gmail.com`).
+2. Pilih mobil yang tersedia dan lanjutkan ke halaman Checkout. Klik **Kirim Pengajuan Sewa** untuk membuat booking.
+3. Di halaman pembayaran (Fase 2), perhatikan banner **⏳ Selesaikan pembayaran sebelum batas waktu**:
+   - Timer countdown harus berdetak turun dari ~30:00 secara real-time.
+   - Timer berubah merah saat sisa < 5 menit.
+4. **Jangan** klik tombol bayar. Biarkan timer habis (atau untuk pengujian cepat, edit `bayar_sebelum` di database menjadi waktu yang sudah lewat).
+5. **Verifikasi auto-cancel** (setelah scheduler berjalan):
+   - Jalankan secara manual: `php artisan booking:cancel-expired`
+   - Cek tabel `booking`: status harus berubah menjadi `dibatalkan`.
+   - Cek tabel `pembayaran`: status harus berubah menjadi `dibatalkan`.
+   - Cek kalender mobil: tanggal yang sebelumnya terblokir harus **terbuka kembali** dan bisa dipesan lagi.
+   - Jika promo digunakan: cek kuota promo di tabel `promo` harus **kembali +1**.
+
+### Skenario 2.6: Menambahkan Rating & Ulasan (Shopee-Style)
 1. Pergi ke menu **Riwayat Booking**.
 2. Cari pesanan yang status penyewaannya sudah selesai (`selesai`).
 3. Klik tombol **Beri Ulasan**.
@@ -136,7 +166,20 @@ Gunakan akun **Mitra Utama** (`mitra@gmail.com`) untuk memverifikasi fitur berik
 2. Isi formulir laporan kerusakan (misal: "Bumper belakang lecet ditabrak motor"), estimasi biaya perbaikan (misal: Rp 600.000), dan unggah foto kerusakan. Klik **Kirim Pengajuan**.
 3. Pantau status pengajuan klaim Anda di menu **Daftar Klaim**. Status awalnya adalah `pending`.
 
-### Skenario 3.3: Verifikasi Komisi 70% Bersih Setelah Diskon Promo
+### Skenario 3.3: Pengajuan Pencairan Dana (Withdrawal) Mandiri
+1. Masuk ke menu **Pencairan Dana** di sidebar mitra.
+2. Pastikan saldo komisi Anda tertera (hanya tampil jika ada transaksi berstatus `selesai`).
+3. Klik **Ajukan Penarikan**. Isi formulir:
+   - **Jumlah penarikan**: masukkan nominal (tidak boleh melebihi saldo tersedia).
+   - **Bank**: pilih/isi nama bank (misal: BCA, BRI, Mandiri).
+   - **Nomor Rekening**: isi nomor rekening tujuan.
+   - **Nama Pemilik Rekening**: isi nama pemilik.
+4. Klik **Kirim Pengajuan**. Status awal adalah `pending`.
+5. **Verifikasi validasi**:
+   - Coba ajukan nominal melebihi saldo → harus muncul error *"Jumlah penarikan melebihi saldo tersedia."*
+6. Pantau status di daftar riwayat penarikan. Setelah Admin memproses (Skenario 1.5), status berubah menjadi `disetujui` atau `ditolak` beserta catatan dari Admin.
+
+### Skenario 3.4: Verifikasi Komisi 70% Bersih Setelah Diskon Promo
 1. Masuk ke menu **Pendapatan & Komisi**.
 2. Temukan transaksi sewa mobil Avanza Veloz milik Anda yang menggunakan promo `RODAKITA10` pada **Skenario 2.3**.
 3. **Verifikasi Perhitungan Komisi**:
