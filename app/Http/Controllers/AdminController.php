@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Booking;
 use App\Models\PemilikMobil;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -12,7 +13,21 @@ class AdminController extends Controller
 {
     public function dashboard()
     {
-        return view('admin.dashboard');
+        // Booking aktif (semua mitra, sedang berjalan)
+        $bookingAktif = Booking::with(['mobil.brand', 'user'])
+            ->whereIn('status', ['disewakan', 'dibayar', 'menunggu'])
+            ->orderBy('tanggal_mulai', 'desc')
+            ->take(5)
+            ->get();
+
+        // Statistik untuk kartu dashboard
+        $totalBooking      = Booking::count();
+        $aktifDisewa       = Booking::whereIn('status', ['disewakan', 'dibayar', 'menunggu'])->count();
+        $perluPerhatian    = Booking::whereDate('tanggal_selesai', today())
+            ->whereIn('status', ['disewakan', 'dibayar'])
+            ->count();
+
+        return view('admin.dashboard', compact('bookingAktif', 'totalBooking', 'aktifDisewa', 'perluPerhatian'));
     }
 
     public function index_user()

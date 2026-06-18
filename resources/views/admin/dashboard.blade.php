@@ -11,10 +11,10 @@
                 <div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-warning bg-opacity-25 text-warning mb-3" style="width: 45px; height: 45px; font-size: 1.5rem;">
                     <i class="bi bi-car-front-fill"></i>
                 </div>
-                <h2 class="fw-bold mb-1">24</h2>
-                <p class="text-muted small fw-medium mb-3">Total Armada</p>
-                <div class="small fw-semibold text-success mt-auto">
-                    <i class="bi bi-arrow-up-short"></i> 2 baru bulan ini
+                <h2 class="fw-bold mb-1">{{ $totalBooking }}</h2>
+                <p class="text-muted small fw-medium mb-3">Total Booking</p>
+                <div class="small fw-semibold text-info mt-auto">
+                    <i class="bi bi-calendar-check"></i> Semua pesanan
                 </div>
             </div>
         </div>
@@ -24,10 +24,10 @@
                 <div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-info bg-opacity-25 text-info mb-3" style="width: 45px; height: 45px; font-size: 1.5rem;">
                     <i class="bi bi-calendar-check-fill"></i>
                 </div>
-                <h2 class="fw-bold mb-1">11</h2>
+                <h2 class="fw-bold mb-1">{{ $aktifDisewa }}</h2>
                 <p class="text-muted small fw-medium mb-3">Aktif Disewa</p>
                 <div class="small fw-semibold text-success mt-auto">
-                    <i class="bi bi-arrow-up-short"></i> 46% utilisasi
+                    <i class="bi bi-arrow-up-short"></i> Sedang berjalan
                 </div>
             </div>
         </div>
@@ -37,10 +37,10 @@
                 <div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-success bg-opacity-25 text-success mb-3" style="width: 45px; height: 45px; font-size: 1.5rem;">
                     <i class="bi bi-cash-stack"></i>
                 </div>
-                <h2 class="fw-bold mb-1">42.8<span class="fs-6 text-muted">jt</span></h2>
-                <p class="text-muted small fw-medium mb-3">Pendapatan Bulan Ini</p>
+                <h2 class="fw-bold mb-1">{{ $bookingAktif->count() }}<span class="fs-6 text-muted"> aktif</span></h2>
+                <p class="text-muted small fw-medium mb-3">Booking Aktif</p>
                 <div class="small fw-semibold text-success mt-auto">
-                    <i class="bi bi-arrow-up-short"></i> +12% vs bulan lalu
+                    <i class="bi bi-arrow-up-short"></i> Sewa berjalan
                 </div>
             </div>
         </div>
@@ -50,10 +50,10 @@
                 <div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-danger bg-opacity-25 text-danger mb-3" style="width: 45px; height: 45px; font-size: 1.5rem;">
                     <i class="bi bi-exclamation-triangle-fill"></i>
                 </div>
-                <h2 class="fw-bold mb-1">3</h2>
-                <p class="text-muted small fw-medium mb-3">Perlu Perhatian</p>
+                <h2 class="fw-bold mb-1">{{ $perluPerhatian }}</h2>
+                <p class="text-muted small fw-medium mb-3">Kembali Hari Ini</p>
                 <div class="small fw-semibold text-danger mt-auto">
-                    <i class="bi bi-arrow-down-short"></i> 2 denda · 1 jadwal
+                    <i class="bi bi-arrow-down-short"></i> Perlu pengecekan
                 </div>
             </div>
         </div>
@@ -65,9 +65,9 @@
                 <div class="card-header bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
                     <div>
                         <h5 class="fw-bold mb-0">Booking Aktif</h5>
-                        <span class="text-muted small">Sewa sedang berjalan hari ini</span>
+                        <span class="text-muted small">Sewa sedang berjalan</span>
                     </div>
-                    <button class="btn btn-outline-secondary btn-sm fw-semibold rounded-3">Lihat Semua</button>
+                    <a href="{{ route('admin.booking.index') }}" class="btn btn-outline-secondary btn-sm fw-semibold rounded-3">Lihat Semua</a>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -82,6 +82,7 @@
                                 </tr>
                             </thead>
                             <tbody class="border-top">
+                                @forelse($bookingAktif as $booking)
                                 <tr>
                                     <td class="ps-4 py-3">
                                         <div class="d-flex align-items-center gap-3">
@@ -89,33 +90,33 @@
                                                 <i class="bi bi-car-front"></i>
                                             </div>
                                             <div>
-                                                <div class="fw-bold" style="font-size: 14px;">Toyota Avanza</div>
-                                                <span class="badge border text-muted fw-normal font-monospace">B 1234 RK</span>
+                                                <div class="fw-bold" style="font-size: 14px;">{{ $booking->mobil->brand->nama_brand ?? '' }} {{ $booking->mobil->model ?? '-' }}</div>
+                                                <span class="badge border text-muted fw-normal font-monospace">{{ $booking->mobil->plat_nomer ?? '-' }}</span>
                                             </div>
                                         </div>
                                     </td>
-                                    <td style="font-size: 14px;">Budi Santoso</td>
-                                    <td><span class="text-muted" style="font-size: 13px;">5–8 Jul 2026</span></td>
-                                    <td><span class="badge bg-success bg-opacity-25 text-success rounded-pill px-3">Aktif</span></td>
-                                    <td class="pe-4"><button class="btn btn-light btn-sm fw-semibold text-secondary">Detail</button></td>
+                                    <td style="font-size: 14px;">{{ $booking->user->nama ?? '-' }}</td>
+                                    <td><span class="text-muted" style="font-size: 13px;">
+                                        {{ \Carbon\Carbon::parse($booking->tanggal_mulai)->format('d M') }}–{{ \Carbon\Carbon::parse($booking->tanggal_selesai)->format('d M Y') }}
+                                    </span></td>
+                                    <td>
+                                        @if($booking->status === 'disewakan')
+                                            <span class="badge bg-success bg-opacity-25 text-success rounded-pill px-3">Aktif</span>
+                                        @elseif($booking->status === 'dibayar')
+                                            <span class="badge bg-info bg-opacity-25 text-info rounded-pill px-3">Dibayar</span>
+                                        @else
+                                            <span class="badge bg-warning bg-opacity-25 text-dark rounded-pill px-3">Menunggu</span>
+                                        @endif
+                                    </td>
+                                    <td class="pe-4">
+                                        <a href="{{ route('admin.booking.index') }}" class="btn btn-light btn-sm fw-semibold text-secondary">Detail</a>
+                                    </td>
                                 </tr>
+                                @empty
                                 <tr>
-                                    <td class="ps-4 py-3">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <div class="bg-light rounded text-secondary d-flex justify-content-center align-items-center fs-5" style="width: 40px; height: 40px;">
-                                                <i class="bi bi-car-front"></i>
-                                            </div>
-                                            <div>
-                                                <div class="fw-bold" style="font-size: 14px;">Honda Jazz</div>
-                                                <span class="badge border text-muted fw-normal font-monospace">D 5678 RK</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td style="font-size: 14px;">Siti Rahayu</td>
-                                    <td><span class="text-muted" style="font-size: 13px;">4–7 Jul 2026</span></td>
-                                    <td><span class="badge bg-warning bg-opacity-25 text-dark rounded-pill px-3">Kembali Hari Ini</span></td>
-                                    <td class="pe-4"><button class="btn btn-light border text-dark btn-sm fw-semibold">Cek Kondisi</button></td>
+                                    <td colspan="5" class="text-center text-muted py-4">Tidak ada booking aktif saat ini.</td>
                                 </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
